@@ -56,7 +56,7 @@ This project is built with:
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/a6c85911-dd0f-497b-afee-00fc30d1cf56) and click on Share -> Publish.
+USe Netlify or any other free deployment platform
 
 ## Can I connect a custom domain to my Lovable project?
 
