@@ -2,17 +2,27 @@ export interface Product {
   id: string;
   name: string;
   description: string;
-  price: number;
-  originalPrice: number;
-  image: string;
-  category: string;
-  brand: string;
-  rating: number;
-  stock: number;
+  price: string;
+  discount_price?: string;
+  discount_start?: string;
+  discount_end?: string;
+  image_url: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+    description: string;
+  };
   tags: string[];
-  featured?: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  status: 'active' | 'inactive';
+  is_available: boolean;
+  is_featured: boolean;
+  stock: number;
+  related_products?: string[];
+  brand?: string;
+  rating?: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface CartItem {

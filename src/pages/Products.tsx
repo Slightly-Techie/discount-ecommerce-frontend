@@ -2,9 +2,10 @@ import { useState, useMemo } from "react";
 import { Header } from "@/components/Header";
 import { SearchAndFilter } from "@/components/SearchAndFilter";
 import { ProductGrid } from "@/components/ProductGrid";
-import { mockProducts } from "@/data/mockProducts";
-import { Product } from "@/types/product";
+import { Product } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { useProducts } from "@/hooks/useProducts";
+import { useAddToCart } from "@/hooks/useCart";
 import { Footer } from "@/components/Footer";
 
 interface FilterOptions {
@@ -25,80 +26,34 @@ export default function Products() {
     sortBy: "name"
   });
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [cartItems, setCartItems] = useState<string[]>([]);
 
-  // Extract unique categories and brands
+  // Fetch products from backend
+  const { data: productsResponse, isLoading, error } = useProducts({
+    search: filters.search,
+    category: filters.category,
+    brand: filters.brand,
+    minPrice: filters.priceRange ? parseInt(filters.priceRange.split('-')[0]) : undefined,
+    maxPrice: filters.priceRange ? 
+      (filters.priceRange.includes('+') ? undefined : parseInt(filters.priceRange.split('-')[1])) : undefined,
+    sortBy: filters.sortBy,
+  });
+
+  const products = productsResponse?.results || [];
   const categories = useMemo(() => 
-    Array.from(new Set(mockProducts.map(p => p.category))).sort(),
-    []
+    Array.from(new Set(products.map(p => p.category))).sort(),
+    [products]
   );
   
   const brands = useMemo(() => 
-    Array.from(new Set(mockProducts.map(p => p.brand))).sort(),
-    []
+    Array.from(new Set(products.map(p => p.brand))).sort(),
+    [products]
   );
 
-  // Filter and sort products
-  const filteredProducts = useMemo(() => {
-    let filtered = mockProducts;
-
-    // Apply search filter
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase();
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm) ||
-        product.description.toLowerCase().includes(searchTerm) ||
-        product.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-      );
-    }
-
-    // Apply category filter
-    if (filters.category) {
-      filtered = filtered.filter(product => product.category === filters.category);
-    }
-
-    // Apply brand filter
-    if (filters.brand) {
-      filtered = filtered.filter(product => product.brand === filters.brand);
-    }
-
-    // Apply price range filter
-    if (filters.priceRange) {
-      const [min, max] = filters.priceRange.split('-').map(p => 
-        p === '100+' ? Infinity : parseInt(p)
-      );
-      filtered = filtered.filter(product => 
-        product.price >= min && (max === Infinity || product.price <= max)
-      );
-    }
-
-    // Apply sorting
-    const sortedProducts = [...filtered].sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'price-low':
-          return a.price - b.price;
-        case 'price-high':
-          return b.price - a.price;
-        case 'rating':
-          return b.rating - a.rating;
-        case 'discount':
-          const discountA = ((a.originalPrice - a.price) / a.originalPrice) * 100;
-          const discountB = ((b.originalPrice - b.price) / b.originalPrice) * 100;
-          return discountB - discountA;
-        default:
-          return a.name.localeCompare(b.name);
-      }
-    });
-
-    return sortedProducts;
-  }, [filters]);
+  // Cart mutations
+  const addToCartMutation = useAddToCart();
 
   const handleAddToCart = (product: Product) => {
-    setCartItems(prev => [...prev, product.id]);
-    toast({
-      title: "Added to cart!",
-      description: `${product.name} has been added to your cart.`,
-    });
+    addToCartMutation.mutate({ productId: product.id, quantity: 1 });
   };
 
   const handleToggleFavorite = (productId: string) => {
@@ -108,7 +63,7 @@ export default function Products() {
         : [...prev, productId]
     );
     
-    const product = mockProducts.find(p => p.id === productId);
+    const product = products.find(p => p.id === productId);
     const isFavorite = favorites.includes(productId);
     
     toast({
@@ -120,7 +75,7 @@ export default function Products() {
   return (
     <div className="min-h-screen bg-background">
       <Header 
-        cartItemsCount={cartItems.length} 
+        cartItemsCount={0} // TODO: Get from cart hook
         favoritesCount={favorites.length}
       />
       
@@ -138,26 +93,45 @@ export default function Products() {
           <SearchAndFilter
             filters={filters}
             onFilterChange={setFilters}
-            categories={categories}
+            categories={categories?.map((c) => c.name)}
             brands={brands}
           />
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading products...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-destructive">Failed to load products. Please try again.</p>
+          </div>
+        )}
+
         {/* Results Header */}
-        <div className="mb-6">
-          <p className="text-muted-foreground">
-            Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
-            {filters.search && ` for "${filters.search}"`}
-          </p>
-        </div>
+        {!isLoading && !error && (
+          <div className="mb-6">
+            <p className="text-muted-foreground">
+              Showing {products.length} product{products.length !== 1 ? 's' : ''}
+              {filters.search && ` for "${filters.search}"`}
+            </p>
+          </div>
+        )}
 
         {/* Product Grid */}
-        <ProductGrid
-          products={filteredProducts}
-          onAddToCart={handleAddToCart}
-          onToggleFavorite={handleToggleFavorite}
-          favorites={favorites}
-        />
+        {!isLoading && !error && (
+          <ProductGrid
+            products={products}
+            onAddToCart={handleAddToCart}
+            onToggleFavorite={handleToggleFavorite}
+            favorites={favorites}
+          />
+        )}
       </main>
 
       {/* Footer */}

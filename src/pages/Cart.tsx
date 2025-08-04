@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/Header";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { mockProducts } from "@/data/mockProducts";
 import { Product } from "@/types/product";
 import { useToast } from "@/hooks/use-toast";
@@ -24,7 +25,7 @@ interface CartItem {
   quantity: number;
 }
 
-export default function Cart() {
+function CartContent() {
   const { toast } = useToast();
   
   // Mock cart items - in real app this would come from state management
@@ -268,5 +269,13 @@ export default function Cart() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function Cart() {
+  return (
+    <ProtectedRoute>
+      <CartContent />
+    </ProtectedRoute>
   );
 }

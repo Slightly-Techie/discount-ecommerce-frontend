@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ProductGrid } from "@/components/ProductGrid";
 import { mockProducts } from "@/data/mockProducts";
 import { Product } from "@/types/product";
@@ -8,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Heart, ArrowLeft, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export default function Favorites() {
+function FavoritesContent() {
   const { toast } = useToast();
   
   // Mock favorites - in real app this would come from state management
@@ -68,10 +69,12 @@ export default function Favorites() {
               </Button>
             </Link>
           </div>
-        </main>
-      </div>
-    );
-  }
+              </main>
+    </div>
+  );
+}
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,5 +119,13 @@ export default function Favorites() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function Favorites() {
+  return (
+    <ProtectedRoute>
+      <FavoritesContent />
+    </ProtectedRoute>
   );
 }

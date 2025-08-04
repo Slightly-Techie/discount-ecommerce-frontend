@@ -18,20 +18,20 @@ export function ProductCard({
   isFavorite = false 
 }: ProductCardProps) {
   const discountPercentage = Math.round(
-    ((product.originalPrice - product.price) / product.originalPrice) * 100
+    ((Number(product?.price )- Number(product?.discount_price)) / Number(product.price)) * 100
   );
 
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] animate-fade-in">
       <div className="relative overflow-hidden">
         <img
-          src={product.image}
+          src={product?.image_url}
           alt={product.name}
           className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-110"
         />
         
         {/* Discount Badge */}
-        {product.originalPrice > product.price && (
+        {product?.price > product.discount_price && (
           <Badge 
             variant="destructive" 
             className="absolute top-2 left-2 bg-gradient-success text-success-foreground font-semibold animate-pulse-glow"
@@ -93,11 +93,11 @@ export function ProductCard({
         {/* Price */}
         <div className="flex items-center gap-2">
           <span className="text-lg font-bold text-primary">
-            ${product.price.toFixed(2)}
+            ${product?.discount_price}
           </span>
-          {product.originalPrice > product.price && (
+          {product.price > product.price && (
             <span className="text-sm text-muted-foreground line-through">
-              ${product.originalPrice.toFixed(2)}
+              ${product.price}
             </span>
           )}
         </div>
