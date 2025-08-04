@@ -6,9 +6,11 @@ import {
   User, 
   Menu, 
   ShoppingBag,
-  Settings
+  Settings,
+  LogOut
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useIsAuthenticated, useLogout } from "@/hooks/useAuth";
 
 interface HeaderProps {
   cartItemsCount?: number;
@@ -21,6 +23,13 @@ export function Header({
   favoritesCount = 0, 
   onMenuToggle 
 }: HeaderProps) {
+  const { isAuthenticated, user } = useIsAuthenticated();
+  const logoutMutation = useLogout();
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="container mx-auto px-4">
@@ -93,13 +102,38 @@ export function Header({
               </Button>
             </Link>
 
-            {/* Admin Panel Link */}
-            <Link to="/admin">
-              <Button variant="outline" size="sm" className="hidden md:flex">
-                <Settings className="h-4 w-4 mr-2" />
-                Admin
-              </Button>
-            </Link>
+            {/* User Menu */}
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground hidden md:block">
+                  Hi, {user?.first_name || 'User'}
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleLogout}
+                  disabled={logoutMutation.isPending}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+                {user?.role === 'admin' && (
+                <Link to="/admin">
+                  <Button variant="outline" size="sm" className="hidden md:flex">
+                    <Settings className="h-4 w-4 mr-2" />
+                      Admin
+                    </Button>
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline" size="sm">
+                  <User className="h-4 w-4 mr-2" />
+                  Login
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

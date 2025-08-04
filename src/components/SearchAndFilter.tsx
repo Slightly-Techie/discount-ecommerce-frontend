@@ -70,7 +70,7 @@ export function SearchAndFilter({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((category) => (
+            {categories?.map((category) => (
               <SelectItem key={category} value={category}>
                 {category}
               </SelectItem>
@@ -110,7 +110,7 @@ export function SearchAndFilter({
         {/* Sort By */}
         <Select value={filters.sortBy} onValueChange={(value) => updateFilter("sortBy", value)}>
           <SelectTrigger>
-            <SelectValue placeholder="Sort By" />
+            <SelectValue placeholder="Sort By" />z
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="name">Name A-Z</SelectItem>
