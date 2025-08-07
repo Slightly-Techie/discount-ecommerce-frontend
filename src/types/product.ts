@@ -8,7 +8,7 @@ export interface Product {
   discount_end?: string;
   image_url: string;
   category: {
-    id: string;
+    id?: string;
     name: string;
     slug: string;
     description: string;
@@ -36,6 +36,7 @@ export interface Category {
   slug: string;
   description?: string;
   image?: string;
+  parent?: string;
 }
 
 export interface Brand {

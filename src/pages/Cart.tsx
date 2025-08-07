@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import {
   Shield
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useCartStore } from "@/store/cartStore";
 
 interface CartItem {
   product: Product;
@@ -29,11 +30,11 @@ function CartContent() {
   const { toast } = useToast();
   
   // Mock cart items - in real app this would come from state management
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    { product: mockProducts[0], quantity: 2 },
-    { product: mockProducts[1], quantity: 1 },
-    { product: mockProducts[2], quantity: 3 },
-  ]);
+  const fetchCart = useCartStore((state) => state.fetchCart);
+  console.log("Fetching cart items...", fetchCart());
+  const isLoading = useCartStore((state) => state.isLoading);
+  const cartItems = useCartStore((state) => state.cart);
+  
 
   const updateQuantity = (productId: string, newQuantity: number) => {
     if (newQuantity === 0) {
@@ -41,18 +42,20 @@ function CartContent() {
       return;
     }
     
-    setCartItems(prev => 
-      prev.map(item => 
-        item.product.id === productId 
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
-    );
+    const item = cartItems.find(item => item.product.id === productId);
+    if (item) {
+      const newItem = { ...item, quantity: newQuantity, product_id: item.product.id };
+      useCartStore.getState().updateCartItem(newItem);
+      toast({
+        title: "Quantity updated",
+        description: `${item.product.name} quantity has been updated to ${newQuantity}.`,
+      });
+    }
   };
 
   const removeItem = (productId: string) => {
     const item = cartItems.find(item => item.product.id === productId);
-    setCartItems(prev => prev.filter(item => item.product.id !== productId));
+    useCartStore.getState().removeFromCart(productId);
     
     if (item) {
       toast({
@@ -63,8 +66,8 @@ function CartContent() {
   };
 
   const cartSummary = useMemo(() => {
-    const subtotal = cartItems.reduce((total, item) => total + (item.product.price * item.quantity), 0);
-    const originalTotal = cartItems.reduce((total, item) => total + (item.product.originalPrice * item.quantity), 0);
+    const subtotal = cartItems?.reduce((total, item) => total + (Number(item?.product?.price )* item?.quantity), 0);
+    const originalTotal = cartItems?.reduce((total, item) => total + (Number(item?.product?.price )* item?.quantity), 0);
     const savings = originalTotal - subtotal;
     const shipping = subtotal > 50 ? 0 : 5.99;
     const tax = subtotal * 0.08; // 8% tax
@@ -77,7 +80,7 @@ function CartContent() {
       shipping,
       tax,
       total,
-      itemCount: cartItems.reduce((total, item) => total + item.quantity, 0)
+      itemCount: cartItems?.reduce((total, item) => total + item?.quantity, 0)
     };
   }, [cartItems]);
 
@@ -87,8 +90,17 @@ function CartContent() {
       description: "Redirecting to payment processing...",
     });
   };
+    useEffect(() => {
+      if (cartItems?.length !== 0) {
+        fetchCart();
+      }
+  }, []);
 
-  if (cartItems.length === 0) {
+  // if (isLoading) {
+  //   return <div>Loading cart...</div>;
+  // }
+
+  if (cartItems?.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <Header cartItemsCount={0} favoritesCount={0} />
@@ -138,28 +150,28 @@ function CartContent() {
                 <CardTitle>Cart Items</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {cartItems.map((item) => (
-                  <div key={item.product.id} className="flex gap-4 p-4 border rounded-lg">
+                {cartItems?.map((item) => (
+                  <div key={item?.product?.id} className="flex gap-4 p-4 border rounded-lg">
                     <img
-                      src={item.product.image}
-                      alt={item.product.name}
+                      src={item?.product?.image_url}
+                      alt={item?.product?.name}
                       className="w-20 h-20 object-cover rounded-md"
                     />
                     <div className="flex-1">
-                      <h3 className="font-semibold">{item.product.name}</h3>
+                      <h3 className="font-semibold">{item?.product?.name}</h3>
                       <p className="text-sm text-muted-foreground line-clamp-2">
-                        {item.product.description}
+                        {item?.product?.description}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline">{item.product.brand}</Badge>
-                        <Badge variant="secondary">{item.product.category}</Badge>
+                        <Badge variant="outline">{item?.product?.brand}</Badge>
+                        <Badge variant="secondary">{item?.product?.category?.name}</Badge>
                       </div>
                       <div className="flex items-center justify-between mt-3">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold">${item.product.price}</span>
-                          {item.product.originalPrice > item.product.price && (
+                          <span className="font-semibold">${item?.product?.price}</span>
+                          {item?.product?.price > item?.product?.price && (
                             <span className="text-sm text-muted-foreground line-through">
-                              ${item.product.originalPrice}
+                              ${item?.product?.price}
                             </span>
                           )}
                         </div>
@@ -167,15 +179,15 @@ function CartContent() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item?.product?.id, item?.quantity - 1)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
+                          <span className="w-8 text-center">{item?.quantity}</span>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item?.product?.id, item?.quantity + 1)}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -204,10 +216,10 @@ function CartContent() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${cartSummary.subtotal.toFixed(2)}</span>
+                  <span>${cartSummary?.subtotal}</span>
                 </div>
-                
-                {cartSummary.savings > 0 && (
+
+                {cartSummary?.savings > 0 && (
                   <div className="flex justify-between text-success">
                     <span>You save</span>
                     <span>-${cartSummary.savings.toFixed(2)}</span>

@@ -50,12 +50,17 @@ export interface UpdateProductData extends Partial<CreateProductData> {}
 
 // Cart API Types
 export interface AddToCartData {
-  productId: string;
+  product: string;
   quantity: number;
+  // product: {
+  //   name: string;
+  //   slug: string;
+  //   description: string;
+  // };
 }
 
 export interface UpdateCartItemData {
-  productId: string;
+  product_id: string;
   quantity: number;
 }
 
@@ -114,8 +119,11 @@ export interface CreateOrderData {
 export interface User {
   id: string;
   email: string;
-  name: string;
-  role: 'user' | 'admin';
+  first_name: string;
+  last_name: string;
+  username: string;
+  phonenumber: string;
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -131,3 +139,10 @@ export interface Category {
   id: string;
   name: string;
 }
+
+export enum UserRole {
+  SELLER = 'seller',
+  ADMIN = 'admin',
+  CUSTOMER = 'customer',
+  MANAGER = 'manager',
+} 

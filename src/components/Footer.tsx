@@ -21,7 +21,7 @@ export function Footer() {
               <div className="w-8 h-8 bg-gradient-primary rounded flex items-center justify-center">
                 <ShoppingBag className="h-4 w-4 text-white" />
               </div>
-              <span className="font-bold text-lg">DealsHub</span>
+              <span className="font-bold text-lg">Whammo</span>
             </div>
             <p className="text-muted-foreground text-sm">
               Your ultimate destination for discovering amazing discounts and deals from top retailers like Shoprite and Melcom.
