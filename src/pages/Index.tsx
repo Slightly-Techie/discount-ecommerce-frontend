@@ -9,26 +9,27 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { ArrowRight, Zap, ShoppingBag, Star, TrendingDown } from "lucide-react";
 import { Footer } from "@/components/Footer";
+import { useProducts } from "@/hooks/useProducts";
+import { useCartStore } from "@/store/cartStore";
 
 const Index = () => {
   const { toast } = useToast();
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [cartItems, setCartItems] = useState<string[]>([]);
+  const cartItems = useCartStore((state) => state.cart);
+  const { data: productsResponse } = useProducts();
+  const products = productsResponse?.results || [];
 
   // Get featured products (first 4 with highest discounts)
   const featuredProducts = useMemo(() => {
-    return mockProducts
-      .filter(product => product.originalPrice > product.price)
-      .sort((a, b) => {
-        const discountA = ((a.originalPrice - a.price) / a.originalPrice) * 100;
-        const discountB = ((b.originalPrice - b.price) / b.originalPrice) * 100;
-        return discountB - discountA;
-      })
+    return products
+      .filter(product => product.is_featured)
+      .sort((a, b) => 
+        (Number(b.discount_price) - Number(b.price)) - (Number(a.discount_price) - Number(a.price))
+      )
       .slice(0, 4);
-  }, []);
+  }, [products]);
 
   const handleAddToCart = (product: Product) => {
-    setCartItems(prev => [...prev, product.id]);
     toast({
       title: "Added to cart!",
       description: `${product.name} has been added to your cart.`,
@@ -54,8 +55,8 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header 
-        cartItemsCount={cartItems.length} 
-        favoritesCount={favorites.length}
+        cartItemsCount={cartItems?.length} 
+        favoritesCount={favorites?.length}
       />
       
       {/* Hero Section */}
@@ -84,7 +85,7 @@ const Index = () => {
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+            <Button size="lg" variant="outline" className="border-white text-primary hover:bg-white/10">
               View Hot Deals
             </Button>
           </div>
