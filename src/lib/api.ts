@@ -62,25 +62,25 @@ export const productApi = {
 export const cartApi = {
   // Get user's cart
   getCart: async (): Promise<CartItem[]> => {
-    const response = await api.get('/cart');
+    const response = await api.get('/cart/cartitems/');
     return response.data.data;
   },
 
   // Add item to cart
   addToCart: async (data: AddToCartData): Promise<CartItem> => {
-    const response = await api.post('/cart/items', data);
+    const response = await api.post('/cart/cartitems/', data);
     return response.data.data;
   },
 
   // Update cart item quantity
   updateCartItem: async (data: UpdateCartItemData): Promise<CartItem> => {
-    const response = await api.put(`/cart/items/${data.productId}`, { quantity: data.quantity });
+    const response = await api.put(`/cart/cartitems/${data.product_id}`, { quantity: data.quantity });
     return response.data.data;
   },
 
   // Remove item from cart
   removeFromCart: async (productId: string): Promise<void> => {
-    await api.delete(`/cart/items/${productId}`);
+    await api.delete(`/cart/cartitems/${productId}`);
   },
 
   // Clear cart
@@ -180,6 +180,26 @@ export const categoryApi = {
     const response = await api.get('/category/');
     return response.data.results;
   },
+  // Create categories
+  createCategories: async (categoryData: Category): Promise<any> => {
+    const response = await api.post('/category/', categoryData);
+    return response.data;
+  }
 };  
+
+// Users API
+export const userApi = {
+  // Get all users
+  getUsers: async (): Promise<any> => {
+    const response = await api.get('/users/admin/users/');
+    return response.data.results;
+  },
+
+  // Update user role
+  updateUserRole: async (id: string, role: string): Promise<any> => {
+    const response = await api.put(`/users/${id}/role`, { role });
+    return response.data;
+  }
+};
 
 export default api; 

@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProducts } from "@/hooks/useProducts";
 import { useAddToCart } from "@/hooks/useCart";
 import { Footer } from "@/components/Footer";
+import { useCartStore } from "@/store/cartStore";
 
 interface FilterOptions {
   search: string;
@@ -26,6 +27,7 @@ export default function Products() {
     sortBy: "name"
   });
   const [favorites, setFavorites] = useState<string[]>([]);
+  const cartItems = useCartStore((state) => state.cart);
 
   // Fetch products from backend
   const { data: productsResponse, isLoading, error } = useProducts({
@@ -52,9 +54,20 @@ export default function Products() {
   // Cart mutations
   const addToCartMutation = useAddToCart();
 
-  const handleAddToCart = (product: Product) => {
-    addToCartMutation.mutate({ productId: product.id, quantity: 1 });
-  };
+const handleAddToCart = (product: Product) => {
+  addToCartMutation.mutate({
+    product_id: product.id,
+    quantity: 1,
+    product: {
+      category: {
+        name: product.category.name,
+        slug: product.category.slug,
+        description: product.category.description,
+      },
+    },
+  });
+};
+
 
   const handleToggleFavorite = (productId: string) => {
     setFavorites(prev => 
@@ -75,7 +88,7 @@ export default function Products() {
   return (
     <div className="min-h-screen bg-background">
       <Header 
-        cartItemsCount={0} // TODO: Get from cart hook
+        cartItemsCount={cartItems.length} // TODO: Get from cart hook
         favoritesCount={favorites.length}
       />
       
