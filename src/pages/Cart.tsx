@@ -4,8 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Header } from "@/components/Header";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { mockProducts } from "@/data/mockProducts";
 import { Product } from "@/types/product";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -20,6 +18,8 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCartStore } from "@/store/cartStore";
+import { useProducts } from "@/hooks/useProducts";
+import { useUpdateCartItem } from "@/hooks/useCart";
 
 interface CartItem {
   product: Product;
@@ -29,45 +29,147 @@ interface CartItem {
 function CartContent() {
   const { toast } = useToast();
   
-  // Mock cart items - in real app this would come from state management
-  const fetchCart = useCartStore((state) => state.fetchCart);
-  console.log("Fetching cart items...", fetchCart());
-  const isLoading = useCartStore((state) => state.isLoading);
-  const cartItems = useCartStore((state) => state.cart);
-  
+  // Cart store
+  // Fetch products from backend
+  const { data: productsResponse, error } = useProducts( );
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
+  const products = productsResponse?.results || [];
+  console.log('Cart page - products:', products);
+  const fetchCart = useCartStore((state) => state.fetchCart);
+  const isLoading = useCartStore((state) => state.isLoading);
+  const cartItems = useCartStore((state) => state.cart) || [];
+  // const updateCartItem = useCartStore((state) => state.updateCartItem);
+  const { mutate: updateCartItem } = useUpdateCartItem();
+  const removeFromCart = useCartStore((state) => state.removeFromCart);
+  const updateCartItemLocal = useCartStore((state) => state.updateCartItemLocal);
+  const removeFromCartLocal = useCartStore((state) => state.removeFromCartLocal);
+  const getCartItemCount = useCartStore((state) => state.getCartItemCount);
+
+  // Debug logging
+  console.log('Cart page - cartItems:', cartItems);
+  console.log('Cart page - cartItems length:', cartItems?.length);
+  console.log('Cart page - isLoading:', isLoading);
+  console.log('Cart page - cartItems type:', typeof cartItems);
+  console.log('Cart page - cartItems isArray:', Array.isArray(cartItems));
+  
+  if (cartItems && Array.isArray(cartItems)) {
+    cartItems.forEach((item, index) => {
+      console.log(`Cart item ${index}:`, item);
+      console.log(`Cart item ${index} product:`, item?.product);
+      console.log(`Cart item ${index} quantity:`, item?.quantity);
+    });
+  }
+  
+  // Check authentication status
+  const accessToken = localStorage.getItem('accessToken');
+  console.log('Cart page - isAuthenticated:', !!accessToken);
+
+  // Fetch cart on component mount
+  // useEffect(() => {
+  //   console.log('Cart page - fetching cart...');
+  //   fetchCart();
+  // }, [fetchCart]);
+  useEffect(() => {
+    if (products?.length > 0) {
+      fetchCart(products);
+    }
+  }, [products]);
+
+  const handleUpdateQuantity = async (productId: string, newQuantity: number) => {
+    console.log('Cart page - updating quantity for product:', productId, 'to:', newQuantity);
     if (newQuantity === 0) {
-      removeItem(productId);
+      await handleRemoveItem(productId);
       return;
     }
     
-    const item = cartItems.find(item => item.product.id === productId);
-    if (item) {
-      const newItem = { ...item, quantity: newQuantity, product_id: item.product.id };
-      useCartStore.getState().updateCartItem(newItem);
+    try {
+      // Check if user is authenticated
+      const accessToken = localStorage.getItem('accessToken');
+      console.log('Cart page - accessToken:', accessToken);
+      
+      if (accessToken) {
+        // User is authenticated, use API
+        await updateCartItem({
+          product: productId,
+          quantity: newQuantity,
+        });}
+      // } else {
+      //   // User is not authenticated, use local storage
+      //   updateCartItemLocal(productId, newQuantity);
+      // }
+      
+      // const item = cartItems.find(item => item.product.id === productId);
+      // console.log('Item:', item);
+      // if (item) {
+      //   toast({
+      //     title: "Quantity updated",
+      //     description: `${item.product.name} quantity has been updated to ${newQuantity}.`,
+      //   });
+      // }
+    } catch (error) {
       toast({
-        title: "Quantity updated",
-        description: `${item.product.name} quantity has been updated to ${newQuantity}.`,
+        title: "Error",
+        description: "Failed to update quantity. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
-  const removeItem = (productId: string) => {
-    const item = cartItems.find(item => item.product.id === productId);
-    useCartStore.getState().removeFromCart(productId);
-    
-    if (item) {
+  const handleRemoveItem = async (productId: string) => {
+    try {
+      const item = cartItems.find(item => item.product.id === productId);
+      
+      // Check if user is authenticated
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (accessToken) {
+        // User is authenticated, use API
+        await removeFromCart(productId);
+      } else {
+        // User is not authenticated, use local storage
+        removeFromCartLocal(productId);
+      }
+      
+      if (item) {
+        toast({
+          title: "Removed from cart",
+          description: `${item.product.name} has been removed from your cart.`,
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Removed from cart",
-        description: `${item.product.name} has been removed from your cart.`,
+        title: "Error",
+        description: "Failed to remove item. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
   const cartSummary = useMemo(() => {
-    const subtotal = cartItems?.reduce((total, item) => total + (Number(item?.product?.price )* item?.quantity), 0);
-    const originalTotal = cartItems?.reduce((total, item) => total + (Number(item?.product?.price )* item?.quantity), 0);
+    if (!cartItems || !Array.isArray(cartItems)) {
+      return {
+        subtotal: 0,
+        originalTotal: 0,
+        savings: 0,
+        shipping: 0,
+        tax: 0,
+        total: 0,
+        itemCount: 0
+      };
+    }
+
+    const subtotal = cartItems.reduce((total, item) => {
+      if (!item || !item.product) return total;
+      const price = Number(item.product.discount_price || item.product.price);
+      return total + (price * (item.quantity || 0));
+    }, 0);
+    
+    const originalTotal = cartItems.reduce((total, item) => {
+      if (!item || !item.product) return total;
+      const originalPrice = Number(item.product.price);
+      return total + (originalPrice * (item.quantity || 0));
+    }, 0);
+    
     const savings = originalTotal - subtotal;
     const shipping = subtotal > 50 ? 0 : 5.99;
     const tax = subtotal * 0.08; // 8% tax
@@ -80,30 +182,51 @@ function CartContent() {
       shipping,
       tax,
       total,
-      itemCount: cartItems?.reduce((total, item) => total + item?.quantity, 0)
+      itemCount: getCartItemCount()
     };
-  }, [cartItems]);
+  }, [cartItems, getCartItemCount]);
 
   const handleCheckout = () => {
+    // Check if user is authenticated
+    const accessToken = localStorage.getItem('accessToken');
+    
+    if (!accessToken) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to proceed with checkout.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     toast({
       title: "Checkout initiated",
       description: "Redirecting to payment processing...",
     });
   };
-    useEffect(() => {
-      if (cartItems?.length !== 0) {
-        fetchCart();
-      }
-  }, []);
 
-  // if (isLoading) {
-  //   return <div>Loading cart...</div>;
-  // }
-
-  if (cartItems?.length === 0) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header cartItemsCount={0} favoritesCount={0} />
+        <Header 
+          favoritesCount={0}
+        />
+        <main className="container mx-auto px-4 py-16">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading cart...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header 
+          favoritesCount={0}
+        />
         
         <main className="container mx-auto px-4 py-16">
           <div className="text-center max-w-md mx-auto">
@@ -128,7 +251,9 @@ function CartContent() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header cartItemsCount={cartSummary.itemCount} favoritesCount={0} />
+      <Header 
+        favoritesCount={0}
+      />
       
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">
@@ -136,10 +261,28 @@ function CartContent() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Continue Shopping
           </Link>
-          <h1 className="text-3xl font-bold">Shopping Cart</h1>
-          <p className="text-muted-foreground">
-            {cartSummary.itemCount} item{cartSummary.itemCount !== 1 ? 's' : ''} in your cart
-          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold">Shopping Cart</h1>
+              <p className="text-muted-foreground">
+                {cartSummary.itemCount} item{cartSummary.itemCount !== 1 ? 's' : ''} in your cart
+              </p>
+              {/* Debug info */}
+              <p className="text-xs text-muted-foreground mt-1">
+                Debug: Cart items: {cartItems?.length || 0} | Raw count: {getCartItemCount()}
+              </p>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                console.log('Manual cart refresh...');
+                fetchCart();
+              }}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Refreshing...' : 'Refresh Cart'}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -150,59 +293,65 @@ function CartContent() {
                 <CardTitle>Cart Items</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {cartItems?.map((item) => (
-                  <div key={item?.product?.id} className="flex gap-4 p-4 border rounded-lg">
-                    <img
-                      src={item?.product?.image_url}
-                      alt={item?.product?.name}
-                      className="w-20 h-20 object-cover rounded-md"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{item?.product?.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {item?.product?.description}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline">{item?.product?.brand}</Badge>
-                        <Badge variant="secondary">{item?.product?.category?.name}</Badge>
-                      </div>
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">${item?.product?.price}</span>
-                          {item?.product?.price > item?.product?.price && (
-                            <span className="text-sm text-muted-foreground line-through">
-                              ${item?.product?.price}
-                            </span>
-                          )}
+                {cartItems && Array.isArray(cartItems) && cartItems.map((item) => {
+                  if (!item || !item.product) return null;
+                  
+                  return (
+                    <div key={item.product.id} className="flex gap-4 p-4 border rounded-lg">
+                      <img
+                        src={item.product.image_url}
+                        alt={item.product.name}
+                        className="w-20 h-20 object-cover rounded-md"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{item.product.name}</h3>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {item.product.description}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline">{item.product.brand}</Badge>
+                          <Badge variant="secondary">{item.product.category?.name}</Badge>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateQuantity(item?.product?.id, item?.quantity - 1)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center">{item?.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateQuantity(item?.product?.id, item?.quantity + 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeItem(item.product.id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">
+                              ${item.product.discount_price || item.product.price}
+                            </span>
+                            {item.product.discount_price && item.product.price > item.product.discount_price && (
+                              <span className="text-sm text-muted-foreground line-through">
+                                ${item.product.price}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUpdateQuantity(item.product.id, (item.quantity || 1) - 1)}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="w-8 text-center">{item.quantity || 1}</span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUpdateQuantity(item.product.id, (item.quantity || 1) + 1)}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemoveItem(item.product.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           </div>
@@ -216,7 +365,7 @@ function CartContent() {
               <CardContent className="space-y-4">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${cartSummary?.subtotal}</span>
+                  <span>${cartSummary?.subtotal.toFixed(2)}</span>
                 </div>
 
                 {cartSummary?.savings > 0 && (
@@ -285,9 +434,5 @@ function CartContent() {
 }
 
 export default function Cart() {
-  return (
-    <ProtectedRoute>
-      <CartContent />
-    </ProtectedRoute>
-  );
+  return <CartContent />;
 }

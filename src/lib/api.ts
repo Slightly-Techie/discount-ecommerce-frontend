@@ -17,7 +17,8 @@ import {
   TokenResponse,
   AddToFavoritesData,
   CreateOrderData,
-  Category
+  Category,
+  CartItemResponse
 } from '@/types';
 
 // Product API
@@ -61,20 +62,28 @@ export const productApi = {
 // Cart API
 export const cartApi = {
   // Get user's cart
-  getCart: async (): Promise<CartItem[]> => {
+  getCart: async (): Promise<CartItemResponse[]> => {
+    // console.log('Making GET request to /cart/cartitems/');
     const response = await api.get('/cart/cartitems/');
-    return response.data.data;
+    // console.log('Raw API response:', response);
+    // console.log('Response data:', response.data);
+    console.log('Response data.results:', response.data.results);
+    return response.data.results;
   },
 
   // Add item to cart
   addToCart: async (data: AddToCartData): Promise<CartItem> => {
+    console.log('Making POST request to /cart/cartitems/ with data:', data);
     const response = await api.post('/cart/cartitems/', data);
+    console.log('Add to cart raw response:', response);
+    console.log('Add to cart response data:', response.data);
+    console.log('Add to cart response data.data:', response.data.data);
     return response.data.data;
   },
 
   // Update cart item quantity
   updateCartItem: async (data: UpdateCartItemData): Promise<CartItem> => {
-    const response = await api.put(`/cart/cartitems/${data.product_id}`, { quantity: data.quantity });
+    const response = await api.put(`/cart/cartitems/${data.product}/`, data);
     return response.data.data;
   },
 

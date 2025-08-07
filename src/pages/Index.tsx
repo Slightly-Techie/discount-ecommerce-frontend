@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/Header";
 import { ProductGrid } from "@/components/ProductGrid";
-import { mockProducts } from "@/data/mockProducts";
 import { Product } from "@/types/product";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
@@ -15,7 +14,12 @@ import { useCartStore } from "@/store/cartStore";
 const Index = () => {
   const { toast } = useToast();
   const [favorites, setFavorites] = useState<string[]>([]);
-  const cartItems = useCartStore((state) => state.cart);
+  
+  // Cart store
+  const addToCart = useCartStore((state) => state.addToCart);
+  const addToCartLocal = useCartStore((state) => state.addToCartLocal);
+  const getCartItemCount = useCartStore((state) => state.getCartItemCount);
+  
   const { data: productsResponse } = useProducts();
   const products = productsResponse?.results || [];
 
@@ -29,11 +33,33 @@ const Index = () => {
       .slice(0, 4);
   }, [products]);
 
-  const handleAddToCart = (product: Product) => {
-    toast({
-      title: "Added to cart!",
-      description: `${product.name} has been added to your cart.`,
-    });
+  const handleAddToCart = async (product: Product) => {
+    try {
+      // Check if user is authenticated
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (accessToken) {
+        // User is authenticated, use API
+        await addToCart({
+          product: product.id,
+          quantity: 1,
+        });
+      } else {
+        // User is not authenticated, use local storage
+        addToCartLocal(product, 1);
+      }
+      
+      toast({
+        title: "Added to cart!",
+        description: `${product.name} has been added to your cart.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleToggleFavorite = (productId: string) => {
@@ -43,7 +69,7 @@ const Index = () => {
         : [...prev, productId]
     );
     
-    const product = mockProducts.find(p => p.id === productId);
+    const product = products.find(p => p.id === productId);
     const isFavorite = favorites.includes(productId);
     
     toast({
@@ -55,7 +81,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header 
-        cartItemsCount={cartItems?.length} 
         favoritesCount={favorites?.length}
       />
       
@@ -166,7 +191,7 @@ const Index = () => {
               <h3 className="text-xl font-semibold mb-2">Shoprite</h3>
               <p className="text-muted-foreground mb-4">Electronics, appliances, and more</p>
               <Badge variant="secondary">
-                {mockProducts.filter(p => p.brand === 'Shoprite').length} products
+                {products.filter(p => p.brand === 'Shoprite').length} products
               </Badge>
             </div>
             
@@ -177,7 +202,7 @@ const Index = () => {
               <h3 className="text-xl font-semibold mb-2">Melcom</h3>
               <p className="text-muted-foreground mb-4">Home goods, food, and lifestyle</p>
               <Badge variant="secondary">
-                {mockProducts.filter(p => p.brand === 'Melcom').length} products
+                {products.filter(p => p.brand === 'Melcom').length} products
               </Badge>
             </div>
           </div>

@@ -5,7 +5,6 @@ import { ProductGrid } from "@/components/ProductGrid";
 import { Product } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts } from "@/hooks/useProducts";
-import { useAddToCart } from "@/hooks/useCart";
 import { Footer } from "@/components/Footer";
 import { useCartStore } from "@/store/cartStore";
 
@@ -27,7 +26,12 @@ export default function Products() {
     sortBy: "name"
   });
   const [favorites, setFavorites] = useState<string[]>([]);
+  
+  // Cart store
   const cartItems = useCartStore((state) => state.cart);
+  const addToCart = useCartStore((state) => state.addToCart);
+  const addToCartLocal = useCartStore((state) => state.addToCartLocal);
+  const getCartItemCount = useCartStore((state) => state.getCartItemCount);
 
   // Fetch products from backend
   const { data: productsResponse, isLoading, error } = useProducts({
@@ -51,23 +55,34 @@ export default function Products() {
     [products]
   );
 
-  // Cart mutations
-  const addToCartMutation = useAddToCart();
-
-const handleAddToCart = (product: Product) => {
-  addToCartMutation.mutate({
-    product_id: product.id,
-    quantity: 1,
-    product: {
-      category: {
-        name: product.category.name,
-        slug: product.category.slug,
-        description: product.category.description,
-      },
-    },
-  });
-};
-
+  const handleAddToCart = async (product: Product) => {
+    try {
+      // Check if user is authenticated
+      const accessToken = localStorage.getItem('accessToken');
+      
+      if (accessToken) {
+        // User is authenticated, use API
+        await addToCart({
+          product: product.id,
+          quantity: 1,
+        });
+      } else {
+        // User is not authenticated, use local storage
+        addToCartLocal(product, 1); 
+      }
+      
+      toast({
+        title: "Added to cart!",
+        description: `${product.name} has been added to your cart.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleToggleFavorite = (productId: string) => {
     setFavorites(prev => 
@@ -88,7 +103,6 @@ const handleAddToCart = (product: Product) => {
   return (
     <div className="min-h-screen bg-background">
       <Header 
-        cartItemsCount={cartItems.length} // TODO: Get from cart hook
         favoritesCount={favorites.length}
       />
       
