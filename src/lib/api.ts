@@ -83,13 +83,21 @@ export const cartApi = {
 
   // Update cart item quantity
   updateCartItem: async (data: UpdateCartItemData): Promise<CartItem> => {
-    const response = await api.put(`/cart/cartitems/${data.product}/`, data);
+    console.log('Making PATCH request to /cart/cartitems/', data.cartItemId, 'with data:', {
+      product: data.product,
+      quantity: data.quantity
+    });
+    const response = await api.patch(`/cart/cartitems/${data.cartItemId}/`, {
+      product: data.product,
+      quantity: data.quantity
+    });
+    console.log('Update cart item response:', response);
     return response.data.data;
   },
 
   // Remove item from cart
-  removeFromCart: async (productId: string): Promise<void> => {
-    await api.delete(`/cart/cartitems/${productId}`);
+  removeFromCart: async (cartItemId: string): Promise<void> => {
+    await api.delete(`/cart/cartitems/${cartItemId}`);
   },
 
   // Clear cart

@@ -41,6 +41,9 @@ export function Header({
   // Cart store
   const getCartItemCount = useCartStore((state) => state.getCartItemCount);
   const cartItemsCount = getCartItemCount();
+  
+  // Debug cart count updates
+  console.log('Header - Cart count:', cartItemsCount);
 
   const handleLogout = () => {
     logoutMutation.mutate();

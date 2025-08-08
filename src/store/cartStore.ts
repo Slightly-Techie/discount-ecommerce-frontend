@@ -5,7 +5,7 @@ import { Product } from "@/types/product";
 import { cartApi, productApi } from "@/lib/api";
 import { AddToCartData, UpdateCartItemData, CartItemResponse } from "@/types";
 
-export interface CartItem {
+export interface CartStoreItem {
   product: Product;
   quantity: number;
   price?: string;
@@ -13,11 +13,12 @@ export interface CartItem {
 }
 
 interface CartState {
-  cart: CartItem[];
+  cart: CartStoreItem[];
   isLoading: boolean;
-  fetchCart: (products?: Product[]) => Promise<void>;
+  isUpdating: boolean; // New state for individual item updates
+  fetchCart: () => Promise<void>;
   addToCart: (data: AddToCartData) => Promise<void>;
-  updateCartItem: (data: UpdateCartItemData) => Promise<void>;
+  updateCartItem: (cartItemId: string, productId: string, quantity: number) => Promise<void>;
   removeFromCart: (productId: string) => Promise<void>;
   clearCart: () => Promise<void>;
   getCartItemCount: () => number;
@@ -32,8 +33,9 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       cart: [],
       isLoading: false,
+      isUpdating: false,
 
-      fetchCart: async (products?: Product[]) => {
+      fetchCart: async () => {
         set({ isLoading: true });
       
         try {
@@ -44,33 +46,15 @@ export const useCartStore = create<CartState>()(
             console.log('Cart API response:', cartResponse);
       
             if (cartResponse && Array.isArray(cartResponse)) {
-              const cartItemsWithProducts = cartResponse.map((cartItem: CartItemResponse) => {
-                const matchedProduct = products?.find(p => p.id === cartItem.product);
+              // Now the cart response already contains the full product objects
+              const cartItems = cartResponse.map((cartItem: CartItemResponse) => ({
+                product: cartItem.product, // Direct access to the product object
+                quantity: cartItem.quantity,
+                price: cartItem.price,
+                id: cartItem.id
+              } as CartStoreItem));
       
-                return {
-                  product: matchedProduct || {
-                    id: cartItem.product,
-                    name: 'Product not found',
-                    description: 'This product is no longer available',
-                    price: cartItem.price,
-                    discount_price: cartItem.price,
-                    image_url: 'https://via.placeholder.com/150?text=Not+Found',
-                    category: { id: '', name: '', slug: '', description: '' },
-                    tags: [],
-                    status: 'inactive' as const,
-                    is_available: false,
-                    is_featured: false,
-                    stock: 0,
-                    brand: 'Unknown',
-                    rating: 0
-                  },
-                  quantity: cartItem.quantity,
-                  price: cartItem.price,
-                  id: cartItem.id
-                } as CartItem;
-              });
-      
-              set({ cart: cartItemsWithProducts });
+              set({ cart: cartItems });
             } else {
               console.log('API returned empty or invalid response, setting empty cart');
               set({ cart: [] });
@@ -95,94 +79,103 @@ export const useCartStore = create<CartState>()(
       
 
       addToCart: async (data) => {
+        set({ isUpdating: true });
         try {
           const accessToken = localStorage.getItem('accessToken');
           
           if (accessToken) {
-            // User is authenticated, use API
-            // console.log('Adding to cart via API:', data);
-            const newCartItem = await cartApi.addToCart(data);
-            // console.log("New cart item from API:", newCartItem);
-            
-            set((state) => {
-              // console.log('Current cart state before update:', state.cart);
-              const existingItemIndex = state.cart.findIndex(
-                item => item?.product?.id === data.product
-              );
-              console.log('Existing item index:', existingItemIndex);
-              
-              if (existingItemIndex >= 0) {
-                // Update existing item quantity
-                const updatedCart = [...state.cart];
-                updatedCart[existingItemIndex] = {
-                  ...updatedCart[existingItemIndex],
-                  quantity: updatedCart[existingItemIndex].quantity + data.quantity
-                };
-                console.log('Updated existing item in cart:', updatedCart);
-                return { cart: updatedCart };
-              } else {
-                // For new items, we need to fetch the product details
-                // For now, we'll refresh the entire cart to get the updated data
-                console.log('New item added, will refresh cart to get product details');
-                return { cart: state.cart };
-              }
-            });
-            
-            // After adding to cart, refresh the cart to get the updated data with product details
-            console.log('Refreshing cart after adding item...');
-            setTimeout(() => {
-              get().fetchCart();
-            }, 100);
+            // Call API first to avoid duplicate local increments
+            await cartApi.addToCart(data);
+            // Refresh cart from server to ensure accuracy
+            await get().fetchCart();
           } else {
             // User is not authenticated, use local storage
             console.log('User not authenticated, using local cart storage');
-            // Note: For authenticated users, we should use the API, not local storage
-            // This branch should not be reached for authenticated users
           }
         } catch (error) {
           console.error("Error adding to cart:", error);
           throw error;
+        } finally {
+          set({ isUpdating: false });
         }
       },
 
-      updateCartItem: async (data) => {
+      updateCartItem: async (cartItemId: string, productId: string, quantity: number) => {
+        set({ isUpdating: true }); // Set updating state
+        
         try {
           const accessToken = localStorage.getItem('accessToken');
           
           if (accessToken) {
+            // Optimistic update - update UI immediately
+            set((state) => {
+              const updatedCart = state.cart.map((item) =>
+                item.product.id === productId ? { ...item, quantity } : item
+              );
+              return { cart: updatedCart };
+            });
+            
             // User is authenticated, use API
-            const updatedItem = await cartApi.updateCartItem(data);
-            set((state) => ({
-              cart: state.cart.map((item) =>
-                item.product.id === data.product ? updatedItem : item
-              ),
-            }));
+            const updatedItem = await cartApi.updateCartItem({
+              cartItemId,
+              product: productId,
+              quantity
+            });
+            console.log('Updated item from API:', updatedItem);
+            
+            // Refresh cart to ensure server state is synced
+            await get().fetchCart();
           } else {
             // User is not authenticated, use local storage
             console.log('User not authenticated, using local cart storage');
+            get().updateCartItemLocal(productId, quantity);
           }
         } catch (error) {
           console.error('Error updating cart item:', error);
+          // Revert optimistic update on error
+          await get().fetchCart();
           throw error;
+        } finally {
+          set({ isUpdating: false }); // Clear updating state
         }
       },
 
       removeFromCart: async (productId) => {
+        set({ isUpdating: true }); // Set updating state
+        
         try {
           const accessToken = localStorage.getItem('accessToken');
           
           if (accessToken) {
+            // Optimistic update - remove from UI immediately
+            set((state) => ({
+              cart: state.cart.filter((item) => item.product.id !== productId),
+            }));
+            
             // User is authenticated, use API
-            await cartApi.removeFromCart(productId);
+            // Find the cart item to get its ID
+            const cartItem = get().cart.find(item => item.product.id === productId);
+            if (!cartItem || !cartItem.id) {
+              throw new Error('Cart item not found or missing ID');
+            }
+            await cartApi.removeFromCart(cartItem.id);
+            
+            // Refresh cart data to ensure local state is in sync with server
+            console.log('Refreshing cart after successful removal...');
+            await get().fetchCart();
+          } else {
+            // Always update local state for non-authenticated users
+            set((state) => ({
+              cart: state.cart.filter((item) => item.product.id !== productId),
+            }));
           }
-          
-          // Always update local state
-          set((state) => ({
-            cart: state.cart.filter((item) => item.product.id !== productId),
-          }));
         } catch (error) {
           console.error('Error removing cart item:', error);
+          // Revert optimistic update on error
+          await get().fetchCart();
           throw error;
+        } finally {
+          set({ isUpdating: false }); // Clear updating state
         }
       },
 
@@ -222,7 +215,7 @@ export const useCartStore = create<CartState>()(
       addToCartLocal: (product: Product, quantity = 1) => {
         set((state) => {
           const existingItemIndex = state.cart.findIndex(
-            item => item.product.id === product.id
+            item => item.product.id === product?.id
           );
           
           if (existingItemIndex >= 0) {
@@ -241,11 +234,13 @@ export const useCartStore = create<CartState>()(
       },
 
       updateCartItemLocal: (productId: string, quantity: number) => {
-        set((state) => ({
-          cart: state.cart.map((item) =>
+        set((state) => {
+          const updatedCart = state.cart.map((item) =>
             item.product.id === productId ? { ...item, quantity } : item
-          ),
-        }));
+          );
+          console.log('Cart store - Updated local cart state:', updatedCart);
+          return { cart: updatedCart };
+        });
       },
 
       removeFromCartLocal: (productId: string) => {

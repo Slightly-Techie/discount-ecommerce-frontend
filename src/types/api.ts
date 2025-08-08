@@ -55,7 +55,8 @@ export interface AddToCartData {
 }
 
 export interface UpdateCartItemData {
-  product: string;
+  cartItemId: string; // The cart item ID (not product ID)
+  product: string;    // The product ID
   quantity: number;
 }
 
@@ -63,7 +64,7 @@ export interface UpdateCartItemData {
 export interface CartItemResponse {
   id: string;
   cart: string;
-  product: string;
+  product: Product; // Now contains the full product object instead of just the ID
   quantity: number;
   price: string;
   created_at: string;

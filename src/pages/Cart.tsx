@@ -18,8 +18,6 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCartStore } from "@/store/cartStore";
-import { useProducts } from "@/hooks/useProducts";
-import { useUpdateCartItem } from "@/hooks/useCart";
 
 interface CartItem {
   product: Product;
@@ -28,22 +26,26 @@ interface CartItem {
 
 function CartContent() {
   const { toast } = useToast();
-  
   // Cart store
-  // Fetch products from backend
-  const { data: productsResponse, error } = useProducts( );
-
-  const products = productsResponse?.results || [];
-  console.log('Cart page - products:', products);
   const fetchCart = useCartStore((state) => state.fetchCart);
   const isLoading = useCartStore((state) => state.isLoading);
+  const isUpdating = useCartStore((state) => state.isUpdating);
   const cartItems = useCartStore((state) => state.cart) || [];
-  // const updateCartItem = useCartStore((state) => state.updateCartItem);
-  const { mutate: updateCartItem } = useUpdateCartItem();
+  const updateCartItem = useCartStore((state) => state.updateCartItem);
   const removeFromCart = useCartStore((state) => state.removeFromCart);
   const updateCartItemLocal = useCartStore((state) => state.updateCartItemLocal);
   const removeFromCartLocal = useCartStore((state) => state.removeFromCartLocal);
   const getCartItemCount = useCartStore((state) => state.getCartItemCount);
+
+  const stableCartItems = useMemo(() => {
+    const items = Array.isArray(cartItems) ? [...cartItems] : [];
+    // Deterministic order: by product name (fallback to product id)
+    return items.sort((a, b) => {
+      const aKey = a?.id || a?.product?.id || "";
+      const bKey = b?.id || b?.product?.id || "";
+      return String(aKey).localeCompare(String(bKey));
+    });
+  }, [cartItems]);
 
   // Debug logging
   console.log('Cart page - cartItems:', cartItems);
@@ -65,20 +67,26 @@ function CartContent() {
   console.log('Cart page - isAuthenticated:', !!accessToken);
 
   // Fetch cart on component mount
-  // useEffect(() => {
-  //   console.log('Cart page - fetching cart...');
-  //   fetchCart();
-  // }, [fetchCart]);
   useEffect(() => {
-    if (products?.length > 0) {
-      fetchCart(products);
-    }
-  }, [products]);
+    console.log('Cart page - fetching cart...');
+    fetchCart();
+  }, [fetchCart]);
 
   const handleUpdateQuantity = async (productId: string, newQuantity: number) => {
     console.log('Cart page - updating quantity for product:', productId, 'to:', newQuantity);
+    
+    // Prevent negative quantities
+    if (newQuantity < 0) {
+      return;
+    }
+    
     if (newQuantity === 0) {
       await handleRemoveItem(productId);
+      return;
+    }
+    
+    // Prevent multiple rapid clicks
+    if (isUpdating) {
       return;
     }
     
@@ -89,24 +97,38 @@ function CartContent() {
       
       if (accessToken) {
         // User is authenticated, use API
-        await updateCartItem({
-          product: productId,
-          quantity: newQuantity,
-        });}
-      // } else {
-      //   // User is not authenticated, use local storage
-      //   updateCartItemLocal(productId, newQuantity);
-      // }
-      
-      // const item = cartItems.find(item => item.product.id === productId);
-      // console.log('Item:', item);
-      // if (item) {
-      //   toast({
-      //     title: "Quantity updated",
-      //     description: `${item.product.name} quantity has been updated to ${newQuantity}.`,
-      //   });
-      // }
+        // Find the cart item to get its ID
+        const cartItem = cartItems.find(item => item.product.id === productId);
+        if (!cartItem || !cartItem.id) {
+          throw new Error('Cart item not found or missing ID');
+        }
+        
+        // Use the store method directly - it handles optimistic updates
+        await updateCartItem(cartItem.id, productId, newQuantity);
+        
+        // Show success toast
+        const item = cartItems.find(item => item.product.id === productId);
+        if (item) {
+          toast({
+            title: "✅ Quantity updated successfully!",
+            description: `${item.product.name} quantity has been updated to ${newQuantity}.`,
+          });
+        }
+      } else {
+        // User is not authenticated, use local storage
+        updateCartItemLocal(productId, newQuantity);
+        
+        // Show success toast
+        const item = cartItems.find(item => item.product.id === productId);
+        if (item) {
+          toast({
+            title: "✅ Quantity updated successfully!",
+            description: `${item.product.name} quantity has been updated to ${newQuantity}.`,
+          });
+        }
+      }
     } catch (error) {
+      console.error('Error updating quantity:', error);
       toast({
         title: "Error",
         description: "Failed to update quantity. Please try again.",
@@ -123,7 +145,7 @@ function CartContent() {
       const accessToken = localStorage.getItem('accessToken');
       
       if (accessToken) {
-        // User is authenticated, use API
+        // User is authenticated, use API - store handles optimistic updates
         await removeFromCart(productId);
       } else {
         // User is not authenticated, use local storage
@@ -132,7 +154,7 @@ function CartContent() {
       
       if (item) {
         toast({
-          title: "Removed from cart",
+          title: "✅ Item removed successfully!",
           description: `${item.product.name} has been removed from your cart.`,
         });
       }
@@ -205,21 +227,6 @@ function CartContent() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header 
-          favoritesCount={0}
-        />
-        <main className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Loading cart...</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
     return (
@@ -280,7 +287,14 @@ function CartContent() {
               }}
               disabled={isLoading}
             >
-              {isLoading ? 'Refreshing...' : 'Refresh Cart'}
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                  Refreshing...
+                </>
+              ) : (
+                'Refresh Cart'
+              )}
             </Button>
           </div>
         </div>
@@ -293,7 +307,7 @@ function CartContent() {
                 <CardTitle>Cart Items</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {cartItems && Array.isArray(cartItems) && cartItems.map((item) => {
+                {stableCartItems && Array.isArray(stableCartItems) && stableCartItems.map((item) => {
                   if (!item || !item.product) return null;
                   
                   return (
@@ -328,14 +342,16 @@ function CartContent() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleUpdateQuantity(item.product.id, (item.quantity || 1) - 1)}
+                              disabled={isLoading || isUpdating || (item.quantity || 1) <= 1}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="w-8 text-center">{item.quantity || 1}</span>
+                            <span className="w-8 text-center font-medium">{item.quantity || 1}</span>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleUpdateQuantity(item.product.id, (item.quantity || 1) + 1)}
+                              disabled={isLoading || isUpdating}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -343,6 +359,7 @@ function CartContent() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleRemoveItem(item.product.id)}
+                              disabled={isLoading || isUpdating}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>

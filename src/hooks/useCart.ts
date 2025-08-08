@@ -81,14 +81,15 @@ export const useUpdateCartItem = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (data: UpdateCartItemData) => cartApi.updateCartItem(data),
-    onMutate: async ({ product, quantity }) => {
+    mutationFn: ({ cartItemId, productId, quantity }: { cartItemId: string; productId: string; quantity: number }) => 
+      cartApi.updateCartItem({ cartItemId, product: productId, quantity }),
+    onMutate: async ({ productId, quantity }) => {
       await queryClient.cancelQueries({ queryKey: cartKeys.items() });
       const previousCart = queryClient.getQueryData(cartKeys.items());
 
       queryClient.setQueryData(cartKeys.items(), (old: CartItem[] = []) =>
         old.map(item =>
-          item.product.id === product ? { ...item, quantity } : item
+          item.product.id === productId ? { ...item, quantity } : item
         )
       );
 
