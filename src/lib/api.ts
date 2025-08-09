@@ -17,7 +17,8 @@ import {
   TokenResponse,
   AddToFavoritesData,
   CreateOrderData,
-  Category
+  Category,
+  CartItemResponse
 } from '@/types';
 
 // Product API
@@ -61,26 +62,42 @@ export const productApi = {
 // Cart API
 export const cartApi = {
   // Get user's cart
-  getCart: async (): Promise<CartItem[]> => {
+  getCart: async (): Promise<CartItemResponse[]> => {
+    // console.log('Making GET request to /cart/cartitems/');
     const response = await api.get('/cart/cartitems/');
-    return response.data.data;
+    // console.log('Raw API response:', response);
+    // console.log('Response data:', response.data);
+    console.log('Response data.results:', response.data.results);
+    return response.data.results;
   },
 
   // Add item to cart
   addToCart: async (data: AddToCartData): Promise<CartItem> => {
+    console.log('Making POST request to /cart/cartitems/ with data:', data);
     const response = await api.post('/cart/cartitems/', data);
+    console.log('Add to cart raw response:', response);
+    console.log('Add to cart response data:', response.data);
+    console.log('Add to cart response data.data:', response.data.data);
     return response.data.data;
   },
 
   // Update cart item quantity
   updateCartItem: async (data: UpdateCartItemData): Promise<CartItem> => {
-    const response = await api.put(`/cart/cartitems/${data.product_id}`, { quantity: data.quantity });
+    console.log('Making PATCH request to /cart/cartitems/', data.cartItemId, 'with data:', {
+      product: data.product,
+      quantity: data.quantity
+    });
+    const response = await api.patch(`/cart/cartitems/${data.cartItemId}/`, {
+      product: data.product,
+      quantity: data.quantity
+    });
+    console.log('Update cart item response:', response);
     return response.data.data;
   },
 
   // Remove item from cart
-  removeFromCart: async (productId: string): Promise<void> => {
-    await api.delete(`/cart/cartitems/${productId}`);
+  removeFromCart: async (cartItemId: string): Promise<void> => {
+    await api.delete(`/cart/cartitems/${cartItemId}`);
   },
 
   // Clear cart
@@ -199,7 +216,52 @@ export const userApi = {
   updateUserRole: async (id: string, role: string): Promise<any> => {
     const response = await api.put(`/users/${id}/role`, { role });
     return response.data;
-  }
+  },
+
+  // Update current user's profile (excluding role)
+  updateCurrentUser: async (
+    id: string,
+    payload: Partial<{
+      email: string;
+      phonenumber: string;
+      username: string;
+      first_name: string;
+      last_name: string;
+      date_of_birth: string;
+      gender: string;
+      metadata: Record<string, any>;
+      profile: { bio?: string; website?: string };
+    }>
+  ): Promise<any> => {
+    const { role, profile, ...rest } = payload as any;
+    const body = { ...rest };
+    if (profile) {
+      // send nested profile as provided; backend may ignore if not supported
+      (body as any).profile = profile;
+    }
+    const response = await api.patch(`/users/users/${id}/`, body);
+    return response.data;
+  },
+
+  // Update nested profile directly (fallback when nested update is ignored)
+  updateProfile: async (
+    profileId: string,
+    payload: { bio?: string | null; website?: string | null }
+  ): Promise<any> => {
+    const response = await api.patch(`/users/profiles/${profileId}/`, payload);
+    return response.data;
+  },
+
+  // Update nested profile with multipart/form-data (for profile_image file)
+  updateProfileMultipart: async (
+    profileId: string,
+    formData: FormData
+  ): Promise<any> => {
+    const response = await api.patch(`/users/profiles/${profileId}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };
 
 export default api; 

@@ -25,13 +25,11 @@ import {
 import { useCartStore } from "@/store/cartStore";
 
 interface HeaderProps {
-  cartItemsCount?: number;
   favoritesCount?: number;
   onMenuToggle?: () => void;
 }
 
 export function Header({
-  cartItemsCount = 0,
   favoritesCount = 0,
   onMenuToggle,
 }: HeaderProps) {
@@ -39,8 +37,14 @@ export function Header({
   const logoutMutation = useLogout();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const cartItems = useCartStore((state) => state.cart);
-
+  
+  // Subscribe to cart changes and derive count
+  const cartItemsCount = useCartStore((state) =>
+    (state.cart || []).reduce((total, item) => total + (item?.quantity || 0), 0)
+  );
+  
+  // Debug cart count updates
+  console.log('Header - Cart count:', cartItemsCount);
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -67,7 +71,7 @@ export function Header({
               <ShoppingBag className="h-4 w-4 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              Whammo
+              DealsHub
             </span>
           </Link>
 
@@ -89,9 +93,12 @@ export function Header({
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
-                              {isAuthenticated
-                    ? `Hi, ${user?.first_name || "User"}`
-                    : ""}
+            {isAuthenticated && (
+              <span className="text-sm text-muted-foreground hidden md:block">
+                Hi, {user?.first_name || "User"}
+              </span>
+            )}
+            
             {/* Favorites */}
             <Link to="/favorites">
               <Button variant="ghost" size="icon" className="relative">
@@ -122,44 +129,62 @@ export function Header({
               </Button>
             </Link>
 
-            {/* Account Dropdown */}
+            {/* User Menu */}
             <DropdownMenu open={open} onOpenChange={setOpen}>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <User className="h-4 w-4 mr-2" />
-                  Account
+                <Button variant="ghost" size="icon">
+                  {isAuthenticated ? (
+                    <UserCircle className="h-5 w-5" />
+                  ) : (
+                    <User className="h-5 w-5" />
+                  )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>
-                  {isAuthenticated
-                    ? `Hi, ${user?.first_name || "User"}`
-                    : "Welcome"}
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+              <DropdownMenuContent align="end" className="w-56">
                 {isAuthenticated ? (
                   <>
-                    {user?.role === "admin" ? (
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                          {user?.first_name} {user?.last_name}
+                        </p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/orders")}>
+                      <List className="mr-2 h-4 w-4" />
+                      <span>Orders</span>
+                    </DropdownMenuItem>
+                    {user?.role === "admin" && (
                       <DropdownMenuItem onClick={() => navigate("/admin")}>
-                        <Settings className="mr-2 h-4 w-4" /> Admin Dashboard
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem onClick={() => navigate("/profile")}>
-                        <UserCircle className="mr-2 h-4 w-4" /> Profile
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>Admin Dashboard</span>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => navigate("/orders")}>
-                      <List className="mr-2 h-4 w-4" /> Orders
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" /> Logout
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
                     </DropdownMenuItem>
                   </>
                 ) : (
-                  <DropdownMenuItem onClick={() => navigate("/login")}>
-                    <UserCircle className="mr-2 h-4 w-4" /> Login
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={() => navigate("/login")}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Login</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/register")}>
+                      <List className="mr-2 h-4 w-4" />
+                      <span>Register</span>
+                    </DropdownMenuItem>
+                  </>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

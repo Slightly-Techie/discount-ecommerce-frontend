@@ -1,57 +1,42 @@
-import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ProductGrid } from "@/components/ProductGrid";
-import { mockProducts } from "@/data/mockProducts";
 import { Product } from "@/types/product";
 import { useToast } from "@/hooks/use-toast";
 import { Heart, ArrowLeft, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useFavorites, useFavoriteHelpers, useFavoritesAuthBinding } from "@/hooks/useFavorites";
 
 function FavoritesContent() {
   const { toast } = useToast();
-  
-  // Mock favorites - in real app this would come from state management
-  const [favorites, setFavorites] = useState<string[]>([
-    mockProducts[0].id,
-    mockProducts[2].id,
-    mockProducts[4].id,
-  ]);
-  const [cartItems, setCartItems] = useState<string[]>([]);
-
-  const favoriteProducts = useMemo(() => {
-    return mockProducts.filter(product => favorites.includes(product.id));
-  }, [favorites]);
+  useFavoritesAuthBinding();
+  const { data: favorites = [], isLoading } = useFavorites();
+  const { addFavorite, removeFavorite } = useFavoriteHelpers();
+  const favoriteIds = new Set(favorites.map((p) => p.id));
 
   const handleAddToCart = (product: Product) => {
-    setCartItems(prev => [...prev, product.id]);
     toast({
       title: "Added to cart!",
       description: `${product.name} has been added to your cart.`,
     });
   };
 
-  const handleToggleFavorite = (productId: string) => {
-    setFavorites(prev => 
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
-    
-    const product = mockProducts.find(p => p.id === productId);
-    const isFavorite = favorites.includes(productId);
-    
-    toast({
-      title: isFavorite ? "Removed from favorites" : "Added to favorites",
-      description: `${product?.name} has been ${isFavorite ? 'removed from' : 'added to'} your favorites.`,
-    });
+  const handleToggleFavorite = async (productId: string) => {
+    const product = favorites.find((p) => p.id === productId);
+    if (favoriteIds.has(productId)) {
+      removeFavorite(productId);
+      toast({ title: "Removed from favorites" });
+    } else if (product) {
+      addFavorite(product);
+      toast({ title: "Added to favorites" });
+    }
   };
 
-  if (favoriteProducts.length === 0) {
+  if (!isLoading && favorites.length === 0) {
     return (
       <div className="min-h-screen bg-background">
-        <Header cartItemsCount={cartItems.length} favoritesCount={favorites.length} />
+        <Header />
         
         <main className="container mx-auto px-4 py-16">
           <div className="text-center max-w-md mx-auto">
@@ -69,16 +54,14 @@ function FavoritesContent() {
               </Button>
             </Link>
           </div>
-              </main>
-    </div>
-  );
-}
-
-
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <Header cartItemsCount={cartItems.length} favoritesCount={favorites.length} />
+      <Header />
       
       <main className="container mx-auto px-4 py-6">
         <div className="mb-8">
@@ -93,17 +76,17 @@ function FavoritesContent() {
             <div>
               <h1 className="text-3xl font-bold">My Favorites</h1>
               <p className="text-muted-foreground">
-                {favoriteProducts.length} product{favoriteProducts.length !== 1 ? 's' : ''} saved
+                {favorites.length} product{favorites.length !== 1 ? 's' : ''} saved
               </p>
             </div>
           </div>
         </div>
 
         <ProductGrid
-          products={favoriteProducts}
+          products={favorites}
           onAddToCart={handleAddToCart}
           onToggleFavorite={handleToggleFavorite}
-          favorites={favorites}
+          favorites={[...favoriteIds]}
         />
 
         <div className="text-center mt-12">

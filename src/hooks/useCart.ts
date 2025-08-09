@@ -7,7 +7,7 @@ import { useToast } from './use-toast';
 export const cartKeys = {
   all: ['cart'] as const,
   items: () => [...cartKeys.all, 'items'] as const,
-  item: (productId: string) => [...cartKeys.items(), productId] as const,
+  item: (product: string) => [...cartKeys.items(), product] as const,
 };
 
 // Get cart items
@@ -27,7 +27,7 @@ export const useAddToCart = () => {
 
   return useMutation({
     mutationFn: (data: AddToCartData) => cartApi.addToCart(data),
-    onMutate: async ({ product_id, quantity }) => {
+    onMutate: async ({ product, quantity }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: cartKeys.items() });
 
@@ -36,16 +36,16 @@ export const useAddToCart = () => {
 
       // Optimistically update to the new value
       queryClient.setQueryData(cartKeys.items(), (old: CartItem[] = []) => {
-        const existingItem = old.find(item => item.product.id === product_id);
+        const existingItem = old.find(item => item.product.id === product);
         if (existingItem) {
           return old.map(item =>
-            item.product.id === product_id
+            item.product.id === product
               ? { ...item, quantity: item.quantity + quantity }
               : item
           );
         } else {
           // This is a simplified version - in real app you'd need the product data
-          return [...old, { product: { id: product_id } as any, quantity }];
+          return [...old, { product: { id: product } as any, quantity }];
         }
       });
 
@@ -81,14 +81,15 @@ export const useUpdateCartItem = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (data: UpdateCartItemData) => cartApi.updateCartItem(data),
-    onMutate: async ({ product_id, quantity }) => {
+    mutationFn: ({ cartItemId, productId, quantity }: { cartItemId: string; productId: string; quantity: number }) => 
+      cartApi.updateCartItem({ cartItemId, product: productId, quantity }),
+    onMutate: async ({ productId, quantity }) => {
       await queryClient.cancelQueries({ queryKey: cartKeys.items() });
       const previousCart = queryClient.getQueryData(cartKeys.items());
 
       queryClient.setQueryData(cartKeys.items(), (old: CartItem[] = []) =>
         old.map(item =>
-          item.product.id === product_id ? { ...item, quantity } : item
+          item.product.id === productId ? { ...item, quantity } : item
         )
       );
 

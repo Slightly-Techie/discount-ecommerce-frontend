@@ -17,6 +17,24 @@ export const useUsers = () => {
 );
 };
 
+export const useUpdateCurrentUser = () => {
+  return useMutation<any, Error, { id: string; payload: any }>({
+    mutationFn: ({ id, payload }) => userApi.updateCurrentUser(id, payload),
+  });
+};
+
+export const useUpdateProfile = () => {
+  return useMutation<any, Error, { profileId: string; payload: { bio?: string | null; website?: string | null } }>({
+    mutationFn: ({ profileId, payload }) => userApi.updateProfile(profileId, payload),
+  });
+};
+
+export const useUpdateProfileMultipart = () => {
+  return useMutation<any, Error, { profileId: string; formData: FormData }>({
+    mutationFn: ({ profileId, formData }) => userApi.updateProfileMultipart(profileId, formData),
+  });
+};
+
 // export const useUpdateUserRole = () => {
 //   return useMutation({
 //     mutationFn: ({ id, role }: { id: string; role: string }) =>

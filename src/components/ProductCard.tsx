@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Heart, ShoppingCart, Star } from "lucide-react";
 import { Product } from "@/types/product";
-import { useCartStore } from "@/store/cartStore"; 
+import { useCartStore } from "@/store/cartStore";
 
 interface ProductCardProps {
   product: Product;
@@ -22,16 +22,11 @@ export function ProductCard({
     ((Number(product?.price )- Number(product?.discount_price)) / Number(product.price)) * 100
   );
 
-  const addToCart = useCartStore((state) => state.addToCart); 
+  const isUpdating = useCartStore((state) => state.isUpdating);
 
   const handleAddToCart = () => {
-
-    addToCart({
-      product: product.id,
-      quantity: 1,
-
-    }); // ✅ use global store
-    onAddToCart?.(product); // Optional: for toast/feedback
+    if (isUpdating) return;
+    onAddToCart?.(product);
   };
 
   return (
@@ -133,8 +128,8 @@ export function ProductCard({
         <Button
           className="w-full"
           variant={product.stock > 0 ? "accent" : "outline"}
-          disabled={product.stock === 0}
-        onClick={handleAddToCart}
+          disabled={product.stock === 0 || isUpdating}
+          onClick={handleAddToCart}
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
           {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}

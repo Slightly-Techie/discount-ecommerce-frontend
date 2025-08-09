@@ -52,16 +52,23 @@ export interface UpdateProductData extends Partial<CreateProductData> {}
 export interface AddToCartData {
   product: string;
   quantity: number;
-  // product: {
-  //   name: string;
-  //   slug: string;
-  //   description: string;
-  // };
 }
 
 export interface UpdateCartItemData {
-  product_id: string;
+  cartItemId: string; // The cart item ID (not product ID)
+  product: string;    // The product ID
   quantity: number;
+}
+
+// Cart item response from API
+export interface CartItemResponse {
+  id: string;
+  cart: string;
+  product: Product; // Now contains the full product object instead of just the ID
+  quantity: number;
+  price: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Auth API Types

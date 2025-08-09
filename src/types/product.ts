@@ -23,11 +23,14 @@ export interface Product {
   rating?: number;
   createdAt?: Date;
   updatedAt?: Date;
+  quantity?: number;
 }
 
 export interface CartItem {
   product: Product;
   quantity: number;
+  price: string;
+  id: string;
 }
 
 export interface Category {
