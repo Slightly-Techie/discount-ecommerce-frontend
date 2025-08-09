@@ -60,8 +60,7 @@ export const useCartStore = create<CartState>()(
               set({ cart: [] });
             }
           } else {
-            console.log('User not authenticated, using local cart state (guest mode)');
-            // Keep existing local cart; ensure it's an array
+            console.log('User not authenticated, using local cart');
             const currentCart = get().cart;
             if (!currentCart || !Array.isArray(currentCart)) {
               set({ cart: [] });
@@ -69,8 +68,10 @@ export const useCartStore = create<CartState>()(
           }
         } catch (error) {
           console.error('Error fetching cart:', error);
-          // On error, do not expose previous user's cart
-          set({ cart: [] });
+          const currentCart = get().cart;
+          if (!currentCart || !Array.isArray(currentCart)) {
+            set({ cart: [] });
+          }
         } finally {
           set({ isLoading: false });
         }
@@ -260,21 +261,7 @@ export const useCartStore = create<CartState>()(
         if (state && (!state.cart || !Array.isArray(state.cart))) {
           state.cart = [];
         }
-        // Do not clear guest cart on rehydrate; cart is cleared explicitly on logout
       },
     }
   )
 );
-
-// Clear cart if tokens are removed at runtime (defense-in-depth)
-window.addEventListener('storage', (e) => {
-  if (e.key === 'accessToken' || e.key === 'refreshToken') {
-    const accessToken = localStorage.getItem('accessToken');
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!accessToken && !refreshToken) {
-      // Clear cart only on explicit logout flows; leave guest cart intact otherwise
-      // useCartStore.setState({ cart: [] });
-      // localStorage.removeItem('cart-storage');
-    }
-  }
-});

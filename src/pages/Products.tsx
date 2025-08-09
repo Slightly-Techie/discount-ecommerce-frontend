@@ -29,7 +29,7 @@ export default function Products() {
   
   // Favorites
   useFavoritesAuthBinding();
-  const { data: favoriteProductsData } = useFavorites(); 
+  const { data: favoriteProductsData } = useFavorites();
   const { addFavorite, removeFavorite } = useFavoriteHelpers();
   const favoriteIds = new Set((favoriteProductsData || []).map((p) => p.id));
   
@@ -51,10 +51,11 @@ export default function Products() {
   });
 
   const products = productsResponse?.results || [];
-  const categories = useMemo(() => 
-    Array.from(new Set(products.map(p => p.category))).sort(),
-    [products]
-  );
+  // Ensure unique category names (strings) to avoid duplicate keys
+  const categories = useMemo(() => {
+    const names = products.map(p => p.category?.name).filter(Boolean) as string[];
+    return Array.from(new Set(names)).sort();
+  }, [products]);
   
   const brands = useMemo(() => 
     Array.from(new Set(products.map(p => p.brand))).sort(),
@@ -123,7 +124,7 @@ export default function Products() {
           <SearchAndFilter
             filters={filters}
             onFilterChange={setFilters}
-            categories={categories?.map((c) => c.name)}
+            categories={categories}
             brands={brands}
           />
         </div>

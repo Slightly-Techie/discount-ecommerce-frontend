@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCartStore } from "@/store/cartStore";
+import { orderApi } from "@/lib/api";
 
 interface CartItem {
   product: Product;
@@ -37,10 +38,12 @@ function CartContent() {
   const updateCartItemLocal = useCartStore((state) => state.updateCartItemLocal);
   const removeFromCartLocal = useCartStore((state) => state.removeFromCartLocal);
   const getCartItemCount = useCartStore((state) => state.getCartItemCount);
+  const removeFromCartById = useCartStore((state) => (state as any).removeFromCartById);
+
+  const [couponCode, setCouponCode] = useState<string>("");
 
   const stableCartItems = useMemo(() => {
     const items = Array.isArray(cartItems) ? [...cartItems] : [];
-    // Deterministic order: by product name (fallback to product id)
     return items.sort((a, b) => {
       const aKey = a?.id || a?.product?.id || "";
       const bKey = b?.id || b?.product?.id || "";
@@ -48,187 +51,105 @@ function CartContent() {
     });
   }, [cartItems]);
 
-  // Debug logging
-  console.log('Cart page - cartItems:', cartItems);
-  console.log('Cart page - cartItems length:', cartItems?.length);
-  console.log('Cart page - isLoading:', isLoading);
-  console.log('Cart page - cartItems type:', typeof cartItems);
-  console.log('Cart page - cartItems isArray:', Array.isArray(cartItems));
-  
-  if (cartItems && Array.isArray(cartItems)) {
-    cartItems.forEach((item, index) => {
-      console.log(`Cart item ${index}:`, item);
-      console.log(`Cart item ${index} product:`, item?.product);
-      console.log(`Cart item ${index} quantity:`, item?.quantity);
-    });
-  }
-  
-  // Check authentication status
   const accessToken = localStorage.getItem('accessToken');
-  console.log('Cart page - isAuthenticated:', !!accessToken);
 
-  // Fetch cart on component mount
   useEffect(() => {
-    console.log('Cart page - fetching cart...');
     fetchCart();
   }, [fetchCart]);
 
   const handleUpdateQuantity = async (productId: string, newQuantity: number) => {
-    console.log('Cart page - updating quantity for product:', productId, 'to:', newQuantity);
-    
-    // Prevent negative quantities
-    if (newQuantity < 0) {
-      return;
-    }
-    
-    if (newQuantity === 0) {
-      await handleRemoveItem(productId);
-      return;
-    }
-    
-    // Prevent multiple rapid clicks
-    if (isUpdating) {
-      return;
-    }
-    
+    if (newQuantity < 0) return;
+    if (newQuantity === 0) { await handleRemoveItem(productId); return; }
+    if (isUpdating) return;
     try {
-      // Check if user is authenticated
       const accessToken = localStorage.getItem('accessToken');
-      console.log('Cart page - accessToken:', accessToken);
-      
       if (accessToken) {
-        // User is authenticated, use API
-        // Find the cart item to get its ID
         const cartItem = cartItems.find(item => item.product.id === productId);
-        if (!cartItem || !cartItem.id) {
-          throw new Error('Cart item not found or missing ID');
-        }
-        
-        // Use the store method directly - it handles optimistic updates
+        if (!cartItem || !cartItem.id) throw new Error('Cart item not found or missing ID');
         await updateCartItem(cartItem.id, productId, newQuantity);
-        
-        // Show success toast
         const item = cartItems.find(item => item.product.id === productId);
         if (item) {
-          toast({
-            title: "✅ Quantity updated successfully!",
-            description: `${item.product.name} quantity has been updated to ${newQuantity}.`,
-          });
+          toast({ title: "✅ Quantity updated successfully!", description: `${item.product.name} quantity has been updated to ${newQuantity}.` });
         }
       } else {
-        // User is not authenticated, use local storage
         updateCartItemLocal(productId, newQuantity);
-        
-        // Show success toast
         const item = cartItems.find(item => item.product.id === productId);
         if (item) {
-          toast({
-            title: "✅ Quantity updated successfully!",
-            description: `${item.product.name} quantity has been updated to ${newQuantity}.`,
-          });
+          toast({ title: "✅ Quantity updated successfully!", description: `${item.product.name} quantity has been updated to ${newQuantity}.` });
         }
       }
     } catch (error) {
-      console.error('Error updating quantity:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update quantity. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to update quantity. Please try again.", variant: "destructive" });
     }
   };
 
-  const handleRemoveItem = async (productId: string) => {
+  const handleRemoveItem = async (cartItemIdOrProductId: string) => {
     try {
-      const item = cartItems.find(item => item.product.id === productId);
-      
-      // Check if user is authenticated
+      const item = cartItems.find(ci => ci.id === cartItemIdOrProductId) ||
+                   cartItems.find(ci => ci.product.id === cartItemIdOrProductId);
       const accessToken = localStorage.getItem('accessToken');
-      
       if (accessToken) {
-        // User is authenticated, use API - store handles optimistic updates
-        await removeFromCart(productId);
+        if (item?.id) await removeFromCartById(item.id as string);
+        else await removeFromCart(cartItemIdOrProductId);
       } else {
-        // User is not authenticated, use local storage
+        const productId = item?.product?.id || cartItemIdOrProductId;
         removeFromCartLocal(productId);
       }
-      
       if (item) {
-        toast({
-          title: "✅ Item removed successfully!",
-          description: `${item.product.name} has been removed from your cart.`,
-        });
+        toast({ title: "✅ Item removed successfully!", description: `${item.product.name} has been removed from your cart.` });
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to remove item. Please try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to remove item. Please try again.", variant: "destructive" });
     }
   };
 
   const cartSummary = useMemo(() => {
     if (!cartItems || !Array.isArray(cartItems)) {
-      return {
-        subtotal: 0,
-        originalTotal: 0,
-        savings: 0,
-        shipping: 0,
-        tax: 0,
-        total: 0,
-        itemCount: 0
-      };
+      return { subtotal: 0, originalTotal: 0, savings: 0, shipping: 0, tax: 0, total: 0, itemCount: 0 };
     }
-
     const subtotal = cartItems.reduce((total, item) => {
       if (!item || !item.product) return total;
       const price = Number(item.product.discount_price || item.product.price);
       return total + (price * (item.quantity || 0));
     }, 0);
-    
     const originalTotal = cartItems.reduce((total, item) => {
       if (!item || !item.product) return total;
       const originalPrice = Number(item.product.price);
       return total + (originalPrice * (item.quantity || 0));
     }, 0);
-    
     const savings = originalTotal - subtotal;
     const shipping = subtotal > 50 ? 0 : 5.99;
-    const tax = subtotal * 0.08; // 8% tax
+    const tax = subtotal * 0.08;
     const total = subtotal + shipping + tax;
-    
-    return {
-      subtotal,
-      originalTotal,
-      savings,
-      shipping,
-      tax,
-      total,
-      itemCount: getCartItemCount()
-    };
+    return { subtotal, originalTotal, savings, shipping, tax, total, itemCount: getCartItemCount() };
   }, [cartItems, getCartItemCount]);
 
-  const handleCheckout = () => {
-    // Check if user is authenticated
+  const handleCheckout = async () => {
     const accessToken = localStorage.getItem('accessToken');
-    
     if (!accessToken) {
-      toast({
-        title: "Login Required",
-        description: "Please log in to proceed with checkout.",
-        variant: "destructive",
-      });
+      toast({ title: "Login Required", description: "Please log in to proceed with checkout.", variant: "destructive" });
       navigate('/login');
       return;
     }
-    
-    toast({
-      title: "Checkout initiated",
-      description: "Redirecting to payment processing...",
-    });
-  };
 
+    try {
+      // Create order via checkout endpoint with optional coupon
+      const order = await orderApi.checkout({ coupon_code: couponCode || undefined });
+      // Simulate payment success (dummy payment)
+      toast({ title: "Redirecting to payment..." });
+      await new Promise((res) => setTimeout(res, 1200));
+      toast({ title: "Payment successful", description: "Your order has been placed." });
+      // Navigate to order details
+      if (order?.id) {
+        navigate(`/orders/${order.id}`);
+      } else {
+        navigate('/orders');
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data ? JSON.stringify(err.response.data) : 'Checkout failed';
+      toast({ title: "Checkout error", description: msg, variant: "destructive" });
+    }
+  };
 
   if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
     return (
@@ -276,17 +197,10 @@ function CartContent() {
               <p className="text-muted-foreground">
                 {cartSummary.itemCount} item{cartSummary.itemCount !== 1 ? 's' : ''} in your cart
               </p>
-              {/* Debug info */}
-              <p className="text-xs text-muted-foreground mt-1">
-                Debug: Cart items: {cartItems?.length || 0} | Raw count: {getCartItemCount()}
-              </p>
             </div>
             <Button 
               variant="outline" 
-              onClick={() => {
-                console.log('Manual cart refresh...');
-                fetchCart();
-              }}
+              onClick={() => fetchCart()}
               disabled={isLoading}
             >
               {isLoading ? (
@@ -303,7 +217,7 @@ function CartContent() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2">
+          <div className="ld:col-span-2 lg:col-span-2">
             <Card>
               <CardHeader>
                 <CardTitle>Cart Items</CardTitle>
@@ -311,7 +225,6 @@ function CartContent() {
               <CardContent className="space-y-4">
                 {stableCartItems && Array.isArray(stableCartItems) && stableCartItems.map((item) => {
                   if (!item || !item.product) return null;
-                  
                   return (
                     <div key={item.product.id} className="flex gap-4 p-4 border rounded-lg">
                       <img
@@ -340,29 +253,14 @@ function CartContent() {
                             )}
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateQuantity(item.product.id, (item.quantity || 1) - 1)}
-                              disabled={isLoading || isUpdating || (item.quantity || 1) <= 1}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleUpdateQuantity(item.product.id, (item.quantity || 1) - 1)} disabled={isLoading || isUpdating || (item.quantity || 1) <= 1}>
                               <Minus className="h-3 w-3" />
                             </Button>
                             <span className="w-8 text-center font-medium">{item.quantity || 1}</span>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUpdateQuantity(item.product.id, (item.quantity || 1) + 1)}
-                              disabled={isLoading || isUpdating}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleUpdateQuantity(item.product.id, (item.quantity || 1) + 1)} disabled={isLoading || isUpdating}>
                               <Plus className="h-3 w-3" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRemoveItem(item.product.id)}
-                              disabled={isLoading || isUpdating}
-                            >
+                            <Button variant="outline" size="sm" onClick={() => handleRemoveItem(item.id || item.product.id)} disabled={isLoading || isUpdating}>
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </div>
@@ -409,6 +307,23 @@ function CartContent() {
                   <span>Tax</span>
                   <span>${cartSummary.tax.toFixed(2)}</span>
                 </div>
+
+                {/* Coupon */}
+                <div className="pt-2">
+                  <label className="text-sm font-medium">Coupon code (optional)</label>
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="text"
+                      className="flex-1 border rounded px-3 py-2"
+                      placeholder="Enter coupon"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                    />
+                    <Button variant="outline" onClick={() => toast({ title: 'Coupon applied', description: couponCode || 'No coupon entered' })}>
+                      Apply
+                    </Button>
+                  </div>
+                </div>
                 
                 <Separator />
                 
@@ -424,11 +339,7 @@ function CartContent() {
                   </div>
                 )}
 
-                <Button 
-                  onClick={handleCheckout} 
-                  className="w-full" 
-                  size="lg"
-                >
+                <Button onClick={handleCheckout} className="w-full" size="lg">
                   <CreditCard className="h-4 w-4 mr-2" />
                   Proceed to Checkout
                 </Button>

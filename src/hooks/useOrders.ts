@@ -16,10 +16,15 @@ export const useOrders = () => {
 export const useOrder = (orderId: string | undefined) => {
   return useQuery({
     queryKey: [...ordersKey, orderId],
-    queryFn: () => orderApi.getOrder(orderId as string),
+    queryFn: async () => {
+      if (!orderId) return null;
+      const data = await orderApi.getOrder(orderId);
+      return data ?? null;
+    },
     enabled: !!orderId,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     retry: false,
+    initialData: null,
   });
 }; 
