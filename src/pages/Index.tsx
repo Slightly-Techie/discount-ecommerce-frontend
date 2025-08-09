@@ -10,10 +10,16 @@ import { ArrowRight, Zap, ShoppingBag, Star, TrendingDown } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { useProducts } from "@/hooks/useProducts";
 import { useCartStore } from "@/store/cartStore";
+import { useFavorites, useFavoriteHelpers, useFavoritesAuthBinding } from "@/hooks/useFavorites";
 
 const Index = () => {
   const { toast } = useToast();
-  const [favorites, setFavorites] = useState<string[]>([]);
+  
+  // Favorites
+  useFavoritesAuthBinding();
+  const { data: favoriteProductsData } = useFavorites();
+  const { addFavorite, removeFavorite } = useFavoriteHelpers();
+  const favoriteIds = new Set((favoriteProductsData || []).map((p) => p.id));
   
   // Cart store
   const addToCart = useCartStore((state) => state.addToCart);
@@ -62,26 +68,23 @@ const Index = () => {
     }
   };
 
-  const handleToggleFavorite = (productId: string) => {
-    setFavorites(prev => 
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
-    
+  const handleToggleFavorite = async (productId: string) => {
     const product = products.find(p => p.id === productId);
-    const isFavorite = favorites.includes(productId);
-    
-    toast({
-      title: isFavorite ? "Removed from favorites" : "Added to favorites",
-      description: `${product?.name} has been ${isFavorite ? 'removed from' : 'added to'} your favorites.`,
-    });
+    if (!product) return;
+
+    if (favoriteIds.has(productId)) {
+      removeFavorite(productId);
+      toast({ title: 'Removed from favorites' });
+    } else {
+      addFavorite(product);
+      toast({ title: 'Added to favorites' });
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header 
-        favoritesCount={favorites?.length}
+        favoritesCount={favoriteProductsData?.length}
       />
       
       {/* Hero Section */}
@@ -94,7 +97,7 @@ const Index = () => {
           </Badge>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
             Discover Amazing
-            <span className="block bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-white to white/80 bg-clip-text text-transparent">
               Discounts & Deals
             </span>
           </h1>
@@ -159,7 +162,7 @@ const Index = () => {
             products={featuredProducts}
             onAddToCart={handleAddToCart}
             onToggleFavorite={handleToggleFavorite}
-            favorites={favorites}
+            favorites={[...favoriteIds]}
           />
           
           <div className="text-center mt-8">

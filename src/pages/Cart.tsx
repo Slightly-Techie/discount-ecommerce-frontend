@@ -16,7 +16,7 @@ import {
   Truck,
   Shield
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCartStore } from "@/store/cartStore";
 
 interface CartItem {
@@ -26,6 +26,7 @@ interface CartItem {
 
 function CartContent() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   // Cart store
   const fetchCart = useCartStore((state) => state.fetchCart);
   const isLoading = useCartStore((state) => state.isLoading);
@@ -218,6 +219,7 @@ function CartContent() {
         description: "Please log in to proceed with checkout.",
         variant: "destructive",
       });
+      navigate('/login');
       return;
     }
     
