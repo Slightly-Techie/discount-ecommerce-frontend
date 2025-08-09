@@ -216,7 +216,52 @@ export const userApi = {
   updateUserRole: async (id: string, role: string): Promise<any> => {
     const response = await api.put(`/users/${id}/role`, { role });
     return response.data;
-  }
+  },
+
+  // Update current user's profile (excluding role)
+  updateCurrentUser: async (
+    id: string,
+    payload: Partial<{
+      email: string;
+      phonenumber: string;
+      username: string;
+      first_name: string;
+      last_name: string;
+      date_of_birth: string;
+      gender: string;
+      metadata: Record<string, any>;
+      profile: { bio?: string; website?: string };
+    }>
+  ): Promise<any> => {
+    const { role, profile, ...rest } = payload as any;
+    const body = { ...rest };
+    if (profile) {
+      // send nested profile as provided; backend may ignore if not supported
+      (body as any).profile = profile;
+    }
+    const response = await api.patch(`/users/users/${id}/`, body);
+    return response.data;
+  },
+
+  // Update nested profile directly (fallback when nested update is ignored)
+  updateProfile: async (
+    profileId: string,
+    payload: { bio?: string | null; website?: string | null }
+  ): Promise<any> => {
+    const response = await api.patch(`/users/profiles/${profileId}/`, payload);
+    return response.data;
+  },
+
+  // Update nested profile with multipart/form-data (for profile_image file)
+  updateProfileMultipart: async (
+    profileId: string,
+    formData: FormData
+  ): Promise<any> => {
+    const response = await api.patch(`/users/profiles/${profileId}/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };
 
 export default api; 

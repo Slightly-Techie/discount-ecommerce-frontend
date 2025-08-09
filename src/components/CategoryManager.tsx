@@ -28,7 +28,6 @@ const CategoryManager = () => {
       {
         id: "",
         name,
-        description,
         slug,
       },
       {
@@ -72,7 +71,9 @@ const CategoryManager = () => {
               >
                 <div>
                   <p className="font-semibold">{c.name}</p>
-                  <p className="text-sm text-muted-foreground">{c.description}</p>
+                  {('description' in c) && (c as any).description && (
+                    <p className="text-sm text-muted-foreground">{(c as any).description}</p>
+                  )}
                 </div>
               </div>
             )

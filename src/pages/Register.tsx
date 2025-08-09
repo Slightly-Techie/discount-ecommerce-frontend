@@ -5,7 +5,7 @@ import { Footer } from "@/components/Footer";
 export default function Register() {
   return (
     <div className="min-h-screen bg-background">
-      <Header cartItemsCount={0} favoritesCount={0} />
+      <Header />
       
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-md mx-auto">

@@ -38,9 +38,10 @@ export function Header({
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   
-  // Cart store
-  const getCartItemCount = useCartStore((state) => state.getCartItemCount);
-  const cartItemsCount = getCartItemCount();
+  // Subscribe to cart changes and derive count
+  const cartItemsCount = useCartStore((state) =>
+    (state.cart || []).reduce((total, item) => total + (item?.quantity || 0), 0)
+  );
   
   // Debug cart count updates
   console.log('Header - Cart count:', cartItemsCount);
@@ -156,6 +157,10 @@ export function Header({
                     <DropdownMenuItem onClick={() => navigate("/profile")}>
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/orders")}>
+                      <List className="mr-2 h-4 w-4" />
+                      <span>Orders</span>
                     </DropdownMenuItem>
                     {user?.role === "admin" && (
                       <DropdownMenuItem onClick={() => navigate("/admin")}>

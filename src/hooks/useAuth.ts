@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { authApi } from '@/lib/api';
+import { authApi, cartApi } from '@/lib/api';
 import { RegisterData, RefreshTokenData, VerifyTokenData, LoginData } from '@/types/api';
 import { useToast } from './use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useCartStore } from '@/store/cartStore';
 
 // Query keys
 export const authKeys = {
@@ -20,6 +21,29 @@ export const useCurrentUser = () => {
   });
 };
 
+async function mergeGuestCartIntoServer() {
+  try {
+    const guestCart = useCartStore.getState().cart || [];
+    if (Array.isArray(guestCart) && guestCart.length > 0) {
+      for (const item of guestCart) {
+        const productId = item?.product?.id;
+        const quantity = item?.quantity || 1;
+        if (!productId) continue;
+        try {
+          await cartApi.addToCart({ product: productId, quantity });
+        } catch {
+          // Ignore individual add errors and continue merging others
+        }
+      }
+    }
+  } finally {
+    // Refresh cart from server to reflect merged state
+    try {
+      await useCartStore.getState().fetchCart();
+    } catch {}
+  }
+}
+
 // Login mutation
 export const useLogin = () => {
   const queryClient = useQueryClient();
@@ -28,7 +52,7 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: (data: LoginData) => authApi.login(data),
-    onSuccess: (data, variables) => {
+    onSuccess: async (data, variables) => {
       // Store tokens
       localStorage.setItem('accessToken', data.access);
       localStorage.setItem('refreshToken', data.refresh);
@@ -40,6 +64,9 @@ export const useLogin = () => {
 
       // Invalidate user query to refetch
       queryClient.invalidateQueries({ queryKey: authKeys.user });
+
+      // Merge guest cart into server, then refresh cart
+      await mergeGuestCartIntoServer();
 
       toast({
         title: "Welcome back!",
@@ -68,7 +95,7 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: (data: RegisterData) => authApi.register(data),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Store tokens
       localStorage.setItem('accessToken', data.access);
       localStorage.setItem('refreshToken', data.refresh);
@@ -80,6 +107,9 @@ export const useRegister = () => {
       
       // Invalidate user query to refetch
       queryClient.invalidateQueries({ queryKey: authKeys.user });
+
+      // Merge guest cart into server, then refresh cart
+      await mergeGuestCartIntoServer();
       
       toast({
         title: "Account created!",
@@ -105,12 +135,31 @@ export const useLogout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const clearCartEverywhere = () => {
+    try {
+      // Clear zustand cart state
+      useCartStore.setState({ cart: [] });
+      // Also call any explicit clear function if present
+      const { clearCartLocal } = useCartStore.getState();
+      if (clearCartLocal) {
+        clearCartLocal();
+      }
+      // Remove persisted cart storage
+      localStorage.removeItem('cart-storage');
+    } catch {
+      // no-op
+    }
+  };
+
   return useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
       // Remove tokens
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+
+      // Clear cart and any persisted state
+      clearCartEverywhere();
       
       // Clear user data from cache
       queryClient.setQueryData(authKeys.user, null);
@@ -130,6 +179,10 @@ export const useLogout = () => {
       // Even if logout fails on server, clear local data
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+
+      // Clear cart and any persisted state
+      clearCartEverywhere();
+      
       queryClient.setQueryData(authKeys.user, null);
       queryClient.clear();
       

@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { useCartStore } from '@/store/cartStore';
 
 // Extend axios config to include _retry property
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -53,9 +54,13 @@ api.interceptors.response.use(
           return api(originalRequest);
         }
       } catch (refreshError) {
-        // Refresh token failed, redirect to login
+        // Refresh token failed, clear auth and cart, redirect to login
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        try {
+          useCartStore.setState({ cart: [] });
+          localStorage.removeItem('cart-storage');
+        } catch {}
         window.location.href = '/login';
       }
     }

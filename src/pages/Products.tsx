@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProducts } from "@/hooks/useProducts";
 import { Footer } from "@/components/Footer";
 import { useCartStore } from "@/store/cartStore";
+import { useFavorites, useFavoriteHelpers, useFavoritesAuthBinding } from "@/hooks/useFavorites";
 
 interface FilterOptions {
   search: string;
@@ -25,7 +26,12 @@ export default function Products() {
     priceRange: "",
     sortBy: "name"
   });
-  const [favorites, setFavorites] = useState<string[]>([]);
+  
+  // Favorites
+  useFavoritesAuthBinding();
+  const { data: favoriteProductsData } = useFavorites(); 
+  const { addFavorite, removeFavorite } = useFavoriteHelpers();
+  const favoriteIds = new Set((favoriteProductsData || []).map((p) => p.id));
   
   // Cart store
   const cartItems = useCartStore((state) => state.cart);
@@ -84,26 +90,23 @@ export default function Products() {
     }
   };
 
-  const handleToggleFavorite = (productId: string) => {
-    setFavorites(prev => 
-      prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
-    
+  const handleToggleFavorite = async (productId: string) => {
     const product = products.find(p => p.id === productId);
-    const isFavorite = favorites.includes(productId);
-    
-    toast({
-      title: isFavorite ? "Removed from favorites" : "Added to favorites",
-      description: `${product?.name} has been ${isFavorite ? 'removed from' : 'added to'} your favorites.`,
-    });
+    if (!product) return;
+
+    if (favoriteIds.has(productId)) {
+      removeFavorite(productId);
+      toast({ title: 'Removed from favorites' });
+    } else {
+      addFavorite(product);
+      toast({ title: 'Added to favorites' });
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header 
-        favoritesCount={favorites.length}
+        favoritesCount={favoriteIds.size}
       />
       
       <main className="container mx-auto px-4 py-6">
@@ -156,7 +159,7 @@ export default function Products() {
             products={products}
             onAddToCart={handleAddToCart}
             onToggleFavorite={handleToggleFavorite}
-            favorites={favorites}
+            favorites={[...favoriteIds]}
           />
         )}
       </main>
