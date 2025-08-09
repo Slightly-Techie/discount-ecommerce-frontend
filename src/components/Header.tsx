@@ -71,7 +71,7 @@ export function Header({
               <ShoppingBag className="h-4 w-4 text-white" />
             </div>
             <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              DealsHub
+              Whammo
             </span>
           </Link>
 

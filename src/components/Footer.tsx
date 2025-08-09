@@ -91,7 +91,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span>hello@dealshub.com</span>
+                <span>hello@whammo.com</span>
               </div>
             </div>
           </div>
@@ -101,7 +101,7 @@ export function Footer() {
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <div>
-            © 2024 DealsHub. All rights reserved.
+            © 2024 Whammo. All rights reserved.
           </div>
           <div className="flex gap-6">
             <a href="#" className="hover:text-primary transition-colors">
