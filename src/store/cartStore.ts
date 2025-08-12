@@ -14,6 +14,7 @@ export interface CartStoreItem {
 
 interface CartState {
   cart: CartStoreItem[];
+  cartId?: string; // Track the cart ID for API calls
   isLoading: boolean;
   isUpdating: boolean; // New state for individual item updates
   fetchCart: () => Promise<void>;
@@ -54,10 +55,13 @@ export const useCartStore = create<CartState>()(
                 id: cartItem.id
               } as CartStoreItem));
       
-              set({ cart: cartItems });
+              // Extract cart ID from the first item (all items should have the same cart ID)
+              const cartId = cartResponse.length > 0 ? cartResponse[0].cart : undefined;
+              
+              set({ cart: cartItems, cartId });
             } else {
               console.log('API returned empty or invalid response, setting empty cart');
-              set({ cart: [] });
+              set({ cart: [], cartId: undefined });
             }
           } else {
             console.log('User not authenticated, using local cart');
@@ -70,7 +74,7 @@ export const useCartStore = create<CartState>()(
           console.error('Error fetching cart:', error);
           const currentCart = get().cart;
           if (!currentCart || !Array.isArray(currentCart)) {
-            set({ cart: [] });
+            set({ cart: [], cartId: undefined });
           }
         } finally {
           set({ isLoading: false });
@@ -141,36 +145,89 @@ export const useCartStore = create<CartState>()(
       },
 
       removeFromCart: async (productId) => {
+        console.log('removeFromCart called with productId:', productId);
         set({ isUpdating: true }); // Set updating state
         
         try {
           const accessToken = localStorage.getItem('accessToken');
+          console.log('Access token exists:', !!accessToken);
           
           if (accessToken) {
             // Optimistic update - remove from UI immediately
-            set((state) => ({
-              cart: state.cart.filter((item) => item.product.id !== productId),
-            }));
+            set((state) => {
+              const newCart = state.cart.filter((item) => item.product.id !== productId);
+              console.log('Optimistic update - cart items after removal:', newCart.length);
+              return { cart: newCart };
+            });
             
             // User is authenticated, use API
             // Find the cart item to get its ID
             const cartItem = get().cart.find(item => item.product.id === productId);
+            console.log('Found cart item for removal:', cartItem);
+            
             if (!cartItem || !cartItem.id) {
               throw new Error('Cart item not found or missing ID');
             }
+            
+            console.log('Calling API to remove cart item:', cartItem.id);
             await cartApi.removeFromCart(cartItem.id);
+            console.log('API call successful');
             
             // Refresh cart data to ensure local state is in sync with server
             console.log('Refreshing cart after successful removal...');
             await get().fetchCart();
           } else {
             // Always update local state for non-authenticated users
-            set((state) => ({
-              cart: state.cart.filter((item) => item.product.id !== productId),
-            }));
+            set((state) => {
+              const newCart = state.cart.filter((item) => item.product.id !== productId);
+              console.log('Local update - cart items after removal:', newCart.length);
+              return { cart: newCart };
+            });
           }
         } catch (error) {
           console.error('Error removing cart item:', error);
+          // Revert optimistic update on error
+          await get().fetchCart();
+          throw error;
+        } finally {
+          set({ isUpdating: false }); // Clear updating state
+        }
+      },
+
+      removeFromCartById: async (cartItemId: string) => {
+        console.log('removeFromCartById called with cartItemId:', cartItemId);
+        set({ isUpdating: true }); // Set updating state
+        
+        try {
+          const accessToken = localStorage.getItem('accessToken');
+          console.log('Access token exists:', !!accessToken);
+          
+          if (accessToken) {
+            // Optimistic update - remove from UI immediately
+            set((state) => {
+              const newCart = state.cart.filter((item) => item.id !== cartItemId);
+              console.log('Optimistic update by ID - cart items after removal:', newCart.length);
+              return { cart: newCart };
+            });
+            
+            // User is authenticated, use API
+            console.log('Calling API to remove cart item by ID:', cartItemId);
+            await cartApi.removeFromCart(cartItemId);
+            console.log('API call successful');
+            
+            // Refresh cart data to ensure local state is in sync with server
+            console.log('Refreshing cart after successful removal by ID...');
+            await get().fetchCart();
+          } else {
+            // For non-authenticated users, find by cart item ID and remove
+            set((state) => {
+              const newCart = state.cart.filter((item) => item.id !== cartItemId);
+              console.log('Local update by ID - cart items after removal:', newCart.length);
+              return { cart: newCart };
+            });
+          }
+        } catch (error) {
+          console.error('Error removing cart item by ID:', error);
           // Revert optimistic update on error
           await get().fetchCart();
           throw error;
@@ -183,16 +240,33 @@ export const useCartStore = create<CartState>()(
         try {
           const accessToken = localStorage.getItem('accessToken');
           
-          if (accessToken) {
-            // User is authenticated, use API
-            await cartApi.clearCart();
-          }
+          // Clear local state immediately for better UX
+          set({ cart: [], cartId: undefined });
           
-          // Always update local state
-          set({ cart: [] });
+          if (accessToken) {
+            // User is authenticated, try to clear on server
+            const cartId = get().cartId;
+            if (cartId) {
+              try {
+                await cartApi.clearCart(cartId);
+                console.log('Cart cleared successfully on server');
+              } catch (error) {
+                console.error('Error clearing cart on server:', error);
+                // Try fallback method - clear by removing individual items
+                try {
+                  await cartApi.clearCartByItems();
+                  console.log('Cart cleared using fallback method');
+                } catch (fallbackError) {
+                  console.error('Fallback cart clearing also failed:', fallbackError);
+                  // Don't throw error - local state is already cleared
+                  // The cart will be re-synced on next fetch
+                }
+              }
+            }
+          }
         } catch (error) {
-          console.error('Error clearing cart:', error);
-          throw error;
+          console.error('Error in clearCart:', error);
+          // Don't throw error - local state is already cleared
         }
       },
 

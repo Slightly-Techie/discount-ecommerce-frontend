@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Resistance Band Set",
+    "description": "Complete resistance band set with 5 different resistance levels",
+    "price": "29.99",
+    "discount_price": "24.99",
+    "image_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+    "category": "Sports & Fitness",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 50
+  },
+  {
+    "name": "Fitness Tracker Watch",
+    "description": "Advanced fitness tracker with heart rate monitor and GPS",
+    "price": "79.99",
+    "discount_price": "59.99",
+    "image_url": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
+    "category": "Sports & Fitness",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 30
+  },
+  {
+    "name": "Foam Roller Set",
+    "description": "Professional foam roller set for muscle recovery and massage",
+    "price": "44.99",
+    "discount_price": "34.99",
+    "image_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+    "category": "Sports & Fitness",
+    "status": "active",
+    "is_available": true,
+    "is_featured": false,
+    "stock": 25
+  },
+  {
+    "name": "Dumbbell Set",
+    "description": "Adjustable dumbbell set with weight range from 5-50 lbs",
+    "price": "299.99",
+    "discount_price": "249.99",
+    "image_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+    "category": "Sports & Fitness",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 8
+  },
+  {
+    "name": "Yoga Mat Premium",
+    "description": "Premium non-slip yoga mat with alignment lines and carrying strap",
+    "price": "39.99",
+    "discount_price": "29.99",
+    "image_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+    "category": "Sports & Fitness",
+    "status": "active",
+    "is_available": true,
+    "is_featured": false,
+    "stock": 40
+  }
+] 

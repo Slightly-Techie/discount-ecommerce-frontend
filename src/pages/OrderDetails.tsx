@@ -10,6 +10,11 @@ function OrderDetailsContent() {
   const { orderId } = useParams();
   const { data: order, isLoading, error } = useOrder(orderId);
 
+  console.log('OrderDetails - orderId:', orderId);
+  console.log('OrderDetails - order data:', order);
+  console.log('OrderDetails - isLoading:', isLoading);
+  console.log('OrderDetails - error:', error);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -27,6 +32,16 @@ function OrderDetailsContent() {
         {error && (
           <div className="text-center py-12">
             <p className="text-destructive">Failed to load order.</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              The order might still be processing or the order ID might be invalid.
+            </p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => window.location.reload()}
+            >
+              Try Again
+            </Button>
           </div>
         )}
 
@@ -38,7 +53,7 @@ function OrderDetailsContent() {
             <CardContent>
               <div className="mb-4 text-sm text-muted-foreground">Status: {order.status || 'Pending'}</div>
               <div className="space-y-3">
-                {(order.items || order.line_items || []).map((item: any, idx: number) => (
+                {(order.items || []).map((item: any, idx: number) => (
                   <div key={idx} className="flex items-center justify-between border rounded p-3">
                     <div>
                       <div className="font-medium">{item.product?.name || item.name}</div>
@@ -49,7 +64,7 @@ function OrderDetailsContent() {
                 ))}
               </div>
               <div className="mt-4 flex items-center justify-end gap-6 text-sm">
-                <div>Total: <span className="font-semibold">${Number(order.total || order.amount || 0).toFixed(2)}</span></div>
+                <div>Total: <span className="font-semibold">${Number(order.total || 0).toFixed(2)}</span></div>
               </div>
             </CardContent>
           </Card>

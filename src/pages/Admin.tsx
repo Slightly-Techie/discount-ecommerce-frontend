@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, Layers, Users, LogOut } from "lucide-react";
+import { Package, Layers, Users, LogOut, Upload } from "lucide-react";
 import { Header } from "@/components/Header";
 import ProductManager from "@/components/ProductManager";
 import CategoryManager from "@/components/CategoryManager";
+import { BulkUploadProducts } from "@/components/BulkUploadProducts";
+import { BulkUploadCategories } from "@/components/BulkUploadCategories";
 
 import { useIsAuthenticated, useLogout } from "@/hooks/useAuth";
 import UserManager from "@/components/UserManager";
@@ -30,6 +32,8 @@ export default function Admin() {
 
   const navItems = [
     { key: "products", label: "Products", icon: Package },
+    { key: "bulk-upload", label: "Bulk Upload Products", icon: Upload },
+    { key: "bulk-upload-categories", label: "Bulk Upload Categories", icon: Upload },
     { key: "categories", label: "Categories", icon: Layers },
     { key: "users", label: "Users", icon: Users },
   ];
@@ -77,6 +81,8 @@ export default function Admin() {
         <Header />
         <div className="p-6">
           {activeTab === "products" && <ProductManager />}
+          {activeTab === "bulk-upload" && <BulkUploadProducts />}
+          {activeTab === "bulk-upload-categories" && <BulkUploadCategories />}
           {activeTab === "categories" && <CategoryManager />}
           {activeTab === "users" && <UserManager />}
         </div>

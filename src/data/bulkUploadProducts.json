@@ -1,0 +1,98 @@
+[
+  {
+    "name": "Premium Wireless Headphones",
+    "description": "High-quality noise-canceling wireless headphones with 30-hour battery life",
+    "price": "129.99",
+    "discount_price": "199.99",
+    "image_url": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
+    "category": "Electronics",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 25
+  },
+  {
+    "name": "Organic Honey 500ml",
+    "description": "Pure organic honey sourced from local beekeepers",
+    "price": "12.99",
+    "discount_price": "18.99",
+    "image_url": "https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400",
+    "category": "Food & Beverages",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 50
+  },
+  {
+    "name": "Smart Fitness Watch",
+    "description": "Advanced fitness tracking with heart rate monitor and GPS",
+    "price": "89.99",
+    "discount_price": "149.99",
+    "image_url": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400",
+    "category": "Electronics",
+    "status": "active",
+    "is_available": true,
+    "is_featured": false,
+    "stock": 15
+  },
+  {
+    "name": "Designer Ceramic Coffee Mug Set",
+    "description": "Set of 4 handcrafted ceramic mugs perfect for your morning coffee",
+    "price": "24.99",
+    "discount_price": "39.99",
+    "image_url": "https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?w=400",
+    "category": "Home & Kitchen",
+    "status": "active",
+    "is_available": true,
+    "is_featured": false,
+    "stock": 30
+  },
+  {
+    "name": "Professional Chef Knife",
+    "description": "High-carbon steel chef knife with ergonomic handle",
+    "price": "79.99",
+    "discount_price": "120.00",
+    "image_url": "https://images.unsplash.com/photo-1593618998160-e34014e67546?w=400",
+    "category": "Home & Kitchen",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 20
+  },
+  {
+    "name": "Wireless Bluetooth Speaker",
+    "description": "Portable waterproof speaker with 360-degree sound",
+    "price": "45.99",
+    "discount_price": "69.99",
+    "image_url": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400",
+    "category": "Electronics",
+    "status": "active",
+    "is_available": true,
+    "is_featured": false,
+    "stock": 35
+  },
+  {
+    "name": "Organic Green Tea 100 Bags",
+    "description": "Premium organic green tea leaves in convenient tea bags",
+    "price": "15.99",
+    "discount_price": "22.99",
+    "image_url": "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400",
+    "category": "Food & Beverages",
+    "status": "active",
+    "is_available": true,
+    "is_featured": false,
+    "stock": 45
+  },
+  {
+    "name": "Yoga Mat with Carrying Strap",
+    "description": "Non-slip yoga mat with alignment lines and carrying strap",
+    "price": "29.99",
+    "discount_price": "49.99",
+    "image_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400",
+    "category": "Sports & Fitness",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 25
+  }
+] 

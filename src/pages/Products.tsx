@@ -1,12 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { SearchAndFilter } from "@/components/SearchAndFilter";
 import { ProductGrid } from "@/components/ProductGrid";
+import { Pagination } from "@/components/Pagination";
 import { Product } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { useProducts } from "@/hooks/useProducts";
 import { Footer } from "@/components/Footer";
 import { useCartStore } from "@/store/cartStore";
+import { useProductsStore } from "@/store/productsStore";
 import { useFavorites, useFavoriteHelpers, useFavoritesAuthBinding } from "@/hooks/useFavorites";
 
 interface FilterOptions {
@@ -39,18 +40,49 @@ export default function Products() {
   const addToCartLocal = useCartStore((state) => state.addToCartLocal);
   const getCartItemCount = useCartStore((state) => state.getCartItemCount);
 
-  // Fetch products from backend
-  const { data: productsResponse, isLoading, error } = useProducts({
-    search: filters.search,
-    category: filters.category,
-    brand: filters.brand,
-    minPrice: filters.priceRange ? parseInt(filters.priceRange.split('-')[0]) : undefined,
-    maxPrice: filters.priceRange ? 
-      (filters.priceRange.includes('+') ? undefined : parseInt(filters.priceRange.split('-')[1])) : undefined,
-    sortBy: filters.sortBy,
-  });
+  // Products store with pagination
+  const { 
+    products, 
+    isLoading, 
+    fetchProducts,
+    currentPage,
+    totalPages,
+    totalCount,
+    setPage
+  } = useProductsStore();
 
-  const products = productsResponse?.results || [];
+  // Fetch products when filters or page changes
+  useEffect(() => {
+    const apiFilters = {
+      search: filters.search || undefined,
+      category: filters.category || undefined,
+      brand: filters.brand || undefined,
+      price_range: filters.priceRange || undefined,
+      ordering: filters.sortBy || undefined,
+    };
+    
+    // Remove undefined values
+    const cleanFilters = Object.fromEntries(
+      Object.entries(apiFilters).filter(([_, value]) => value !== undefined)
+    );
+    
+    fetchProducts(cleanFilters, currentPage);
+  }, [fetchProducts, filters, currentPage]);
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setPage(page);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
+    // Reset to first page when filters change
+    setPage(1);
+  };
+
   // Ensure unique category names (strings) to avoid duplicate keys
   const categories = useMemo(() => {
     const names = products.map(p => p.category?.name).filter(Boolean) as string[];
@@ -123,7 +155,7 @@ export default function Products() {
         <div className="mb-8">
           <SearchAndFilter
             filters={filters}
-            onFilterChange={setFilters}
+            onFilterChange={handleFilterChange}
             categories={categories}
             brands={brands}
           />
@@ -137,25 +169,23 @@ export default function Products() {
           </div>
         )}
 
-        {/* Error State */}
-        {error && (
-          <div className="text-center py-12">
-            <p className="text-destructive">Failed to load products. Please try again.</p>
-          </div>
-        )}
-
         {/* Results Header */}
-        {!isLoading && !error && (
+        {!isLoading && (
           <div className="mb-6">
             <p className="text-muted-foreground">
-              Showing {products.length} product{products.length !== 1 ? 's' : ''}
+              Showing {products.length} of {totalCount} product{totalCount !== 1 ? 's' : ''}
               {filters.search && ` for "${filters.search}"`}
+              {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
             </p>
+            {/* Debug info */}
+            <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
+              Debug: totalPages={totalPages}, currentPage={currentPage}, totalCount={totalCount}, products.length={products.length}
+            </div>
           </div>
         )}
 
         {/* Product Grid */}
-        {!isLoading && !error && (
+        {!isLoading && (
           <ProductGrid
             products={products}
             onAddToCart={handleAddToCart}
@@ -163,6 +193,14 @@ export default function Products() {
             favorites={[...favoriteIds]}
           />
         )}
+
+        {/* Pagination - Always show for debugging */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+          isLoading={isLoading}
+        />
       </main>
 
       {/* Footer */}

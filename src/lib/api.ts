@@ -49,13 +49,19 @@ export const productApi = {
 
   // Update product (Admin only)
   updateProduct: async (id: string, product: UpdateProductData): Promise<Product> => {
-    const response = await api.put(`/products/${id}`, product);
+    const response = await api.put(`/products/${id}/`, product);
     return response.data.data;
   },
 
   // Delete product (Admin only)
   deleteProduct: async (id: string): Promise<void> => {
     await api.delete(`/products/${id}`);
+  },
+
+  // Bulk upload products (Admin only)
+  bulkUploadProducts: async (products: any[]): Promise<any> => {
+    const response = await api.post('/products/bulk-upload/', { products });
+    return response.data;
   },
 };
 
@@ -87,9 +93,56 @@ export const cartApi = {
     await api.delete(`/cart/cartitems/${cartItemId}/`);
   },
 
+  // Clear cart by removing all items individually
+  clearCartByItems: async (): Promise<void> => {
+    try {
+      const cartItems = await cartApi.getCart();
+      console.log('Clearing cart by removing individual items:', cartItems);
+      
+      // Delete each cart item individually
+      for (const item of cartItems) {
+        if (item.id) {
+          await cartApi.removeFromCart(item.id);
+        }
+      }
+      console.log('Cart cleared by removing individual items');
+    } catch (error) {
+      console.error('Error clearing cart by items:', error);
+      throw error;
+    }
+  },
+
   // Clear cart
-  clearCart: async (): Promise<void> => {
-    await api.delete('/cart');
+  clearCart: async (cartId: string): Promise<void> => {
+    // Try different approaches to clear the cart
+    try {
+      // First try the original endpoint
+      await api.delete(`/cart/${cartId}/clear/`);
+    } catch (error: any) {
+      if (error.response?.status === 405) {
+        // If method not allowed, try alternative approaches
+        console.log('Clear cart endpoint not supported, trying alternative approach...');
+        
+        // Option 1: Try POST instead of DELETE
+        try {
+          await api.post(`/cart/${cartId}/clear/`);
+          return;
+        } catch (postError) {
+          console.log('POST clear also failed, trying to clear individual items...');
+        }
+        
+        // Option 2: Get cart items and delete them individually
+        try {
+          await cartApi.clearCartByItems();
+          return;
+        } catch (individualError) {
+          console.error('Failed to clear cart by removing individual items:', individualError);
+          throw individualError;
+        }
+      } else {
+        throw error;
+      }
+    }
   },
 };
 
@@ -134,7 +187,7 @@ export const authApi = {
     localStorage.removeItem('refreshToken');
   },
   getCurrentUser: async (): Promise<any> => {
-    const response = await api.get('/users/me');
+    const response = await api.get('/users/me/');
     return response.data;
   },
 };
@@ -158,7 +211,9 @@ export const orderApi = {
   },
   // Get single order
   getOrder: async (orderId: string): Promise<any> => {
+    console.log('orderApi.getOrder - calling endpoint:', `/orders/${orderId}/`);
     const response = await api.get(`/orders/${orderId}/`);
+    console.log('orderApi.getOrder - response:', response.data);
     return response.data;
   },
 };
@@ -172,7 +227,11 @@ export const categoryApi = {
   createCategories: async (categoryData: Category): Promise<any> => {
     const response = await api.post('/category/', categoryData);
     return response.data;
-  }
+  },
+  bulkUploadCategories: async (categories: any[]): Promise<any> => {
+    const response = await api.post('/category/bulk-upload/', { categories });
+    return response.data;
+  },
 };  
 
 // Users API

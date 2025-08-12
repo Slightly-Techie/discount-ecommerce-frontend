@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Wireless Gaming Mouse",
+    "description": "High-precision gaming mouse with RGB lighting and programmable buttons",
+    "price": "89.99",
+    "discount_price": "69.99",
+    "image_url": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400",
+    "category": "Electronics",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 15
+  },
+  {
+    "name": "Mechanical Keyboard",
+    "description": "Premium mechanical keyboard with Cherry MX switches and backlit keys",
+    "price": "149.99",
+    "discount_price": "129.99",
+    "image_url": "https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=400",
+    "category": "Electronics",
+    "status": "active",
+    "is_available": true,
+    "is_featured": false,
+    "stock": 25
+  }
+] 
