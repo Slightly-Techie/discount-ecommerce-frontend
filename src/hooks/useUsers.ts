@@ -60,10 +60,13 @@ export const useDeleteAddress = () => {
   });
 };
 
-// export const useUpdateUserRole = () => {
-//   return useMutation({
-//     mutationFn: ({ id, role }: { id: string; role: string }) =>
-//       userApi.updateUserRole(id, role),
-//     ...
-//   });
-// };
+export const useUpdateUserRole = () => {
+  const qc = useQueryClient();
+  return useMutation<any, Error, { id: string; role: string }>({
+    mutationFn: ({ id, role }) => userApi.updateUserRole(id, role),
+    onSuccess: () => {
+      // Invalidate users query to refresh the list
+      qc.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+};

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Organic Coffee Beans 500g",
+    "description": "Premium organic coffee beans from high-altitude farms",
+    "price": "24.99",
+    "discount_price": "19.99",
+    "image_url": "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=400",
+    "category": "Food & Beverages",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 40
+  },
+  {
+    "name": "Dark Chocolate Bars Pack",
+    "description": "Assorted dark chocolate bars with 70% cocoa content",
+    "price": "18.99",
+    "discount_price": "14.99",
+    "image_url": "https://images.unsplash.com/photo-1481391319762-47dff72954d9?w=400",
+    "category": "Food & Beverages",
+    "status": "active",
+    "is_available": true,
+    "is_featured": false,
+    "stock": 60
+  },
+  {
+    "name": "Herbal Tea Collection",
+    "description": "Premium herbal tea collection with chamomile, mint, and lavender",
+    "price": "16.99",
+    "discount_price": "12.99",
+    "image_url": "https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400",
+    "category": "Food & Beverages",
+    "status": "active",
+    "is_available": true,
+    "is_featured": true,
+    "stock": 35
+  }
+] 

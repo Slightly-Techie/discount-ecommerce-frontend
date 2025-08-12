@@ -4,6 +4,7 @@ import { RegisterData, RefreshTokenData, VerifyTokenData, LoginData } from '@/ty
 import { useToast } from './use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/store/cartStore';
+import { useOrdersStore } from '@/store/ordersStore';
 
 // Query keys
 export const authKeys = {
@@ -57,14 +58,21 @@ export const useLogin = () => {
       localStorage.setItem('accessToken', data.access);
       localStorage.setItem('refreshToken', data.refresh);
 
-      // Update user data in cache if available
+      // Store user data in localStorage for orders store
       if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
         queryClient.setQueryData(authKeys.user, data.user);
       }
 
       // Invalidate user query to refetch
       queryClient.invalidateQueries({ queryKey: authKeys.user });
 
+      // Clear any existing orders for previous user
+      useOrdersStore.setState({ orders: [], currentOrder: null, currentUserId: null });
+
+      // Clear any existing orders for previous user
+      useOrdersStore.setState({ orders: [], currentOrder: null, currentUserId: null });
+      
       // Merge guest cart into server, then refresh cart
       await mergeGuestCartIntoServer();
 
@@ -100,8 +108,9 @@ export const useRegister = () => {
       localStorage.setItem('accessToken', data.access);
       localStorage.setItem('refreshToken', data.refresh);
       
-      // Update user data in cache if available
+      // Store user data in localStorage for orders store
       if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
         queryClient.setQueryData(authKeys.user, data.user);
       }
       
@@ -151,15 +160,28 @@ export const useLogout = () => {
     }
   };
 
+  const clearOrdersEverywhere = () => {
+    try {
+      // Clear zustand orders state
+      useOrdersStore.setState({ orders: [], currentOrder: null, currentUserId: null });
+      // Remove persisted orders storage
+      localStorage.removeItem('orders-storage');
+    } catch {
+      // no-op
+    }
+  };
+
   return useMutation({
     mutationFn: authApi.logout,
     onSuccess: () => {
-      // Remove tokens
+      // Remove tokens and user data
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
 
-      // Clear cart and any persisted state
+      // Clear cart and orders
       clearCartEverywhere();
+      clearOrdersEverywhere();
       
       // Clear user data from cache
       queryClient.setQueryData(authKeys.user, null);
@@ -179,9 +201,11 @@ export const useLogout = () => {
       // Even if logout fails on server, clear local data
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
 
-      // Clear cart and any persisted state
+      // Clear cart and orders
       clearCartEverywhere();
+      clearOrdersEverywhere();
       
       queryClient.setQueryData(authKeys.user, null);
       queryClient.clear();

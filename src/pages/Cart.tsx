@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useCartStore } from "@/store/cartStore";
+import { useOrdersStore } from "@/store/ordersStore";
 import { orderApi } from "@/lib/api";
 
 interface CartItem {
@@ -39,6 +40,8 @@ function CartContent() {
   const removeFromCartLocal = useCartStore((state) => state.removeFromCartLocal);
   const getCartItemCount = useCartStore((state) => state.getCartItemCount);
   const removeFromCartById = useCartStore((state) => (state as any).removeFromCartById);
+  const clearCart = useCartStore((state) => state.clearCart);
+  const addOrder = useOrdersStore((state) => state.addOrder);
 
   const [couponCode, setCouponCode] = useState<string>("");
 
@@ -85,21 +88,47 @@ function CartContent() {
 
   const handleRemoveItem = async (cartItemIdOrProductId: string) => {
     try {
+      console.log('Removing item:', cartItemIdOrProductId);
+      
+      // Find the item by either cart item ID or product ID
       const item = cartItems.find(ci => ci.id === cartItemIdOrProductId) ||
                    cartItems.find(ci => ci.product.id === cartItemIdOrProductId);
+      
+      console.log('Found item to remove:', item);
+      
+      if (!item) {
+        toast({ title: "Error", description: "Item not found in cart.", variant: "destructive" });
+        return;
+      }
+
       const accessToken = localStorage.getItem('accessToken');
+      
       if (accessToken) {
-        if (item?.id) await removeFromCartById(item.id as string);
-        else await removeFromCart(cartItemIdOrProductId);
+        // User is authenticated - use cart item ID if available, otherwise use product ID
+        if (item.id) {
+          console.log('Removing by cart item ID:', item.id);
+          await removeFromCartById(item.id);
+        } else {
+          console.log('Removing by product ID:', item.product.id);
+          await removeFromCart(item.product.id);
+        }
       } else {
-        const productId = item?.product?.id || cartItemIdOrProductId;
-        removeFromCartLocal(productId);
+        // User is not authenticated - use product ID for local storage
+        console.log('Removing from local storage by product ID:', item.product.id);
+        removeFromCartLocal(item.product.id);
       }
-      if (item) {
-        toast({ title: "✅ Item removed successfully!", description: `${item.product.name} has been removed from your cart.` });
-      }
+      
+      toast({ 
+        title: "✅ Item removed successfully!", 
+        description: `${item.product.name} has been removed from your cart.` 
+      });
     } catch (error) {
-      toast({ title: "Error", description: "Failed to remove item. Please try again.", variant: "destructive" });
+      console.error('Error removing item:', error);
+      toast({ 
+        title: "Error", 
+        description: "Failed to remove item. Please try again.", 
+        variant: "destructive" 
+      });
     }
   };
 
@@ -135,19 +164,64 @@ function CartContent() {
     try {
       // Create order via checkout endpoint with optional coupon
       const order = await orderApi.checkout({ coupon_code: couponCode || undefined });
+      console.log('Checkout response:', order);
+      
       // Simulate payment success (dummy payment)
       toast({ title: "Redirecting to payment..." });
       await new Promise((res) => setTimeout(res, 1200));
       toast({ title: "Payment successful", description: "Your order has been placed." });
+      
+      // Add the new order to the store
+      if (order) {
+        addOrder(order);
+      }
+      
+      // Clear the cart after successful checkout (don't wait for it to fail)
+      try {
+        await clearCart();
+        console.log('Cart cleared successfully');
+      } catch (cartError) {
+        console.error('Error clearing cart:', cartError);
+        // Don't fail the checkout process if cart clearing fails
+        // The cart will be re-synced on next page load
+      }
+      
+      // Add a small delay to ensure order is fully processed
+      await new Promise((res) => setTimeout(res, 1000));
+      
       // Navigate to order details
       if (order?.id) {
+        console.log('Navigating to order:', order.id);
+        console.log('Full order object from checkout:', order);
         navigate(`/orders/${order.id}`);
       } else {
+        console.log('No order ID, navigating to orders list');
+        console.log('Full order object from checkout:', order);
         navigate('/orders');
       }
     } catch (err: any) {
-      const msg = err?.response?.data ? JSON.stringify(err.response.data) : 'Checkout failed';
-      toast({ title: "Checkout error", description: msg, variant: "destructive" });
+      const errorData = err?.response?.data;
+      
+      // Handle specific error cases with user-friendly messages
+      if (errorData?.detail && errorData.detail.includes('No address found')) {
+        toast({ 
+          title: "Address Required", 
+          description: "You cannot proceed to checkout without an address. Please set your address in your profile.", 
+          variant: "destructive" 
+        });
+      } else if (errorData?.detail) {
+        toast({ 
+          title: "Checkout Error", 
+          description: errorData.detail, 
+          variant: "destructive" 
+        });
+      } else {
+        toast({ 
+          title: "Checkout Failed", 
+          description: "An error occurred during checkout. Please try again.", 
+          variant: "destructive" 
+        });
+      }
     }
   };
 

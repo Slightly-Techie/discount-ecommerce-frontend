@@ -12,11 +12,19 @@ function OrdersContent() {
   const { data: orders = [], isLoading, error } = useOrders();
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
 
+  console.log('Orders page - orders data:', orders);
+  console.log('Orders page - orders length:', orders.length);
+  console.log('Orders page - isLoading:', isLoading);
+  console.log('Orders page - error:', error);
+
   const filtered = useMemo(() => {
     if (filter === 'all') return orders;
     if (filter === 'pending') return orders.filter((o: any) => (o.status || '').toLowerCase() !== 'completed');
     return orders.filter((o: any) => (o.status || '').toLowerCase() === 'completed');
   }, [orders, filter]);
+
+  console.log('Orders page - filtered orders:', filtered);
+  console.log('Orders page - filtered length:', filtered.length);
 
   const EmptyState = (
     <div className="text-center py-16">
