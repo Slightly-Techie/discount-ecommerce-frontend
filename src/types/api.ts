@@ -24,8 +24,11 @@ export interface ProductFilters {
   brand?: string;
   minPrice?: number;
   maxPrice?: number;
+  price_range?: string;
   sortBy?: string;
+  ordering?: string;
   page?: number;
+  page_size?: number;
   limit?: number;
 }
 
