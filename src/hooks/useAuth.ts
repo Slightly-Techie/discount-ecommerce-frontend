@@ -102,36 +102,58 @@ export const useRegister = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (data: RegisterData) => authApi.register(data),
+    mutationFn: (data: RegisterData) => {
+      return authApi.register(data);
+    },
     onSuccess: async (data) => {
-      // Store tokens
-      localStorage.setItem('accessToken', data.access);
-      localStorage.setItem('refreshToken', data.refresh);
-      
-      // Store user data in localStorage for orders store
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-        queryClient.setQueryData(authKeys.user, data.user);
+      // The registration endpoint returns user data but not tokens
+      // We need to login after successful registration to get tokens
+      if (data.id) {
+        // Store user data temporarily
+        localStorage.setItem('tempUser', JSON.stringify(data));
+        queryClient.setQueryData(authKeys.user, data);
+        
+        toast({
+          title: "Account created!",
+          description: "Your account has been created successfully. Please log in to continue.",
+        });
+
+        // Redirect to login page instead of home
+        navigate('/login');
+      } else {
+        // If we somehow get tokens, handle them normally
+        if (data.access) {
+          localStorage.setItem('accessToken', data.access);
+        }
+        if (data.refresh) {
+          localStorage.setItem('refreshToken', data.refresh);
+        }
+        
+        // Store user data in localStorage for orders store
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          queryClient.setQueryData(authKeys.user, data.user);
+        }
+        
+        // Invalidate user query to refetch
+        queryClient.invalidateQueries({ queryKey: authKeys.user });
+
+        // Merge guest cart into server, then refresh cart
+        await mergeGuestCartIntoServer();
+        
+        toast({
+          title: "Account created!",
+          description: "Your account has been created successfully",
+        });
+
+        // Redirect to home page
+        navigate('/');
       }
-      
-      // Invalidate user query to refetch
-      queryClient.invalidateQueries({ queryKey: authKeys.user });
-
-      // Merge guest cart into server, then refresh cart
-      await mergeGuestCartIntoServer();
-      
-      toast({
-        title: "Account created!",
-        description: "Your account has been created successfully",
-      });
-
-      // Redirect to home page
-      navigate('/');
     },
     onError: (error: any) => {
       toast({
         title: "Registration failed",
-        description: error.response?.data?.message || "Failed to create account",
+        description: error.response?.data?.message || error.response?.data?.detail || error.message || "Failed to create account",
         variant: "destructive",
       });
     },

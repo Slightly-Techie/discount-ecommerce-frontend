@@ -1,4 +1,5 @@
 import api from './axios';
+import { API_BASE_URL } from './axios';
 import { 
   Product, 
   CartItem,
@@ -20,6 +21,33 @@ import {
   Category,
   CartItemResponse
 } from '@/types';
+
+// Test API connectivity
+export const testApiConnection = async (): Promise<boolean> => {
+  try {
+    const endpoints = ['/health/', '/products/', '/category/'];
+    
+    for (const endpoint of endpoints) {
+      try {
+        const response = await api.get(endpoint);
+        return true;
+      } catch (error: any) {
+        // If we get a 401 or 403, it means the server is reachable but we need auth
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          return true;
+        }
+        // If we get a 404, try the next endpoint
+        if (error.response?.status === 404) {
+          continue;
+        }
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    return false;
+  }
+};
 
 // Product API
 export const productApi = {
@@ -97,7 +125,6 @@ export const cartApi = {
   clearCartByItems: async (): Promise<void> => {
     try {
       const cartItems = await cartApi.getCart();
-      console.log('Clearing cart by removing individual items:', cartItems);
       
       // Delete each cart item individually
       for (const item of cartItems) {
@@ -105,9 +132,7 @@ export const cartApi = {
           await cartApi.removeFromCart(item.id);
         }
       }
-      console.log('Cart cleared by removing individual items');
     } catch (error) {
-      console.error('Error clearing cart by items:', error);
       throw error;
     }
   },
@@ -121,14 +146,12 @@ export const cartApi = {
     } catch (error: any) {
       if (error.response?.status === 405) {
         // If method not allowed, try alternative approaches
-        console.log('Clear cart endpoint not supported, trying alternative approach...');
         
         // Option 1: Try POST instead of DELETE
         try {
           await api.post(`/cart/${cartId}/clear/`);
           return;
         } catch (postError) {
-          console.log('POST clear also failed, trying to clear individual items...');
         }
         
         // Option 2: Get cart items and delete them individually
@@ -136,7 +159,6 @@ export const cartApi = {
           await cartApi.clearCartByItems();
           return;
         } catch (individualError) {
-          console.error('Failed to clear cart by removing individual items:', individualError);
           throw individualError;
         }
       } else {
@@ -167,7 +189,14 @@ export const authApi = {
     return response.data;
   },
   register: async (data: RegisterData): Promise<AuthResponse> => {
-    const response = await api.post('/users/register/', data);
+    
+    // Add metadata field as required by the API
+    const payload = {
+      ...data,
+      metadata: {}
+    };
+    
+    const response = await api.post('/users/register/', payload);
     return response.data;
   },
   refreshToken: async (data: RefreshTokenData): Promise<TokenResponse> => {
@@ -211,9 +240,7 @@ export const orderApi = {
   },
   // Get single order
   getOrder: async (orderId: string): Promise<any> => {
-    console.log('orderApi.getOrder - calling endpoint:', `/orders/${orderId}/`);
     const response = await api.get(`/orders/${orderId}/`);
-    console.log('orderApi.getOrder - response:', response.data);
     return response.data;
   },
 };
