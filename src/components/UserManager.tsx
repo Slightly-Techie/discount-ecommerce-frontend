@@ -5,8 +5,9 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { User, Shield, User as UserIcon, Loader2, Search, Filter, Package } from "lucide-react";
+import { Shield, User as UserIcon, Loader2, Search, Filter, Package } from "lucide-react";
 import { Input } from "./ui/input";
+import { User } from "@/types";
 
 const UserManager = () => {
   const { data: users, isLoading, error, refetch } = useUsers();

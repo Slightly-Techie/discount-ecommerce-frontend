@@ -9,7 +9,10 @@ export interface ApiResponse<T> {
 
 export interface PaginatedResponse<T> {
   results: T[];
-  pagination: {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  pagination?: {
     page: number;
     limit: number;
     total: number;
@@ -146,8 +149,27 @@ export interface User {
   username: string;
   phonenumber: string;
   role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
+  is_active?: boolean;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+  is_deleted?: boolean;
+  metadata?: Record<string, any>;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface UpdateUserData {
+  email?: string;
+  phonenumber?: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  is_active?: boolean;
+  is_staff?: boolean;
+  is_superuser?: boolean;
+  role?: UserRole;
+  is_deleted?: boolean;
+  metadata?: Record<string, any>;
 }
 
 // Error Types

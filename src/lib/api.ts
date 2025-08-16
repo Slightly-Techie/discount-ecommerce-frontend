@@ -19,7 +19,9 @@ import {
   AddToFavoritesData,
   CreateOrderData,
   Category,
-  CartItemResponse
+  CartItemResponse,
+  User,
+  UpdateUserData
 } from '@/types';
 
 // Test API connectivity
@@ -54,6 +56,12 @@ export const productApi = {
   // Get all products with optional filters
   getProducts: async (params?: ProductFilters): Promise<PaginatedResponse<Product>> => {
     const response = await api.get('/products/', { params });
+    return response.data;
+  },
+
+  // Get products from a specific URL (for pagination)
+  getProductsFromUrl: async (url: string): Promise<PaginatedResponse<Product>> => {
+    const response = await api.get(url);
     return response.data;
   },
 
@@ -263,12 +271,12 @@ export const categoryApi = {
 
 // Users API
 export const userApi = {
-  getUsers: async (): Promise<any> => {
+  getUsers: async (): Promise<User[]> => {
     const response = await api.get('/users/admin/users/');
     return response.data.results;
   },
-  updateUserRole: async (id: string, role: string): Promise<any> => {
-    const response = await api.put(`/users/${id}/role`, { role });
+  updateUserRole: async (id: string, role: string): Promise<User> => {
+    const response = await api.patch(`/users/admin/users/${id}/`, { role });
     return response.data;
   },
   updateCurrentUser: async (

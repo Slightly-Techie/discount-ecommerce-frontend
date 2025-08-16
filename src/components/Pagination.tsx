@@ -5,18 +5,31 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onNextPage?: () => void;
+  onPreviousPage?: () => void;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
   isLoading?: boolean;
 }
 
-export function Pagination({ currentPage, totalPages, onPageChange, isLoading = false }: PaginationProps) {
+export function Pagination({ 
+  currentPage, 
+  totalPages, 
+  onPageChange, 
+  onNextPage,
+  onPreviousPage,
+  hasNextPage = false,
+  hasPreviousPage = false,
+  isLoading = false 
+}: PaginationProps) {
   // Always show for debugging
   console.log('Pagination component rendered:', { currentPage, totalPages, isLoading });
   
   if (totalPages <= 1) {
     console.log('Pagination not showing: totalPages <= 1');
     return (
-      <div className="bg-green-100 border border-green-300 rounded-lg p-4 my-6">
-        <p className="text-center text-green-800">No pagination needed - only {totalPages} page(s)</p>
+      <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 my-6">
+        <p className="text-center text-primary font-medium">No pagination needed - only {totalPages} page(s)</p>
       </div>
     );
   }
@@ -50,14 +63,14 @@ export function Pagination({ currentPage, totalPages, onPageChange, isLoading = 
   const visiblePages = getVisiblePages();
 
   return (
-    <div className="bg-purple-100 border-2 border-purple-400 rounded-lg p-6 my-6">
+    <div className="bg-gradient-to-r from-primary/5 to-accent/5 rounded-lg p-6 my-6 border border-primary/10">
       <div className="flex items-center justify-center space-x-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(currentPage - 1)}
-          disabled={currentPage <= 1 || isLoading}
-          className="flex items-center gap-1 bg-white hover:bg-purple-50 border-purple-300"
+          onClick={onPreviousPage || (() => onPageChange(currentPage - 1))}
+          disabled={(!hasPreviousPage && currentPage <= 1) || isLoading}
+          className="flex items-center gap-1 bg-white hover:bg-primary/10 border-primary/30 text-primary hover:text-primary"
         >
           <ChevronLeft className="h-4 w-4" />
           Previous
@@ -67,8 +80,8 @@ export function Pagination({ currentPage, totalPages, onPageChange, isLoading = 
           {visiblePages.map((page, index) => {
             if (page === '...') {
               return (
-                <div key={`dots-${index}`} className="flex items-center justify-center w-8 h-8 bg-white rounded border border-purple-300">
-                  <MoreHorizontal className="h-4 w-4 text-purple-600" />
+                <div key={`dots-${index}`} className="flex items-center justify-center w-8 h-8 bg-white rounded border border-primary/30">
+                  <MoreHorizontal className="h-4 w-4 text-primary" />
                 </div>
               );
             }
@@ -82,8 +95,8 @@ export function Pagination({ currentPage, totalPages, onPageChange, isLoading = 
                 disabled={isLoading}
                 className={`w-8 h-8 p-0 ${
                   currentPage === page 
-                    ? "bg-purple-600 text-white" 
-                    : "bg-white hover:bg-purple-50 border-purple-300"
+                    ? "bg-gradient-primary text-white border-0" 
+                    : "bg-white hover:bg-primary/10 border-primary/30 text-primary hover:text-primary"
                 }`}
               >
                 {page}
@@ -95,9 +108,9 @@ export function Pagination({ currentPage, totalPages, onPageChange, isLoading = 
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(currentPage + 1)}
-          disabled={currentPage >= totalPages || isLoading}
-          className="flex items-center gap-1 bg-white hover:bg-purple-50 border-purple-300"
+          onClick={onNextPage || (() => onPageChange(currentPage + 1))}
+          disabled={(!hasNextPage && currentPage >= totalPages) || isLoading}
+          className="flex items-center gap-1 bg-white hover:bg-primary/10 border-primary/30 text-primary hover:text-primary"
         >
           Next
           <ChevronRight className="h-4 w-4" />
@@ -105,7 +118,7 @@ export function Pagination({ currentPage, totalPages, onPageChange, isLoading = 
       </div>
       
       {/* Page info */}
-      <div className="text-center mt-3 text-sm text-purple-800 font-medium">
+      <div className="text-center mt-3 text-sm text-primary font-medium">
         Page {currentPage} of {totalPages} • Total: {totalPages} pages
       </div>
     </div>

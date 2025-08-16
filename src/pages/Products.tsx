@@ -48,7 +48,11 @@ export default function Products() {
     currentPage,
     totalPages,
     totalCount,
-    setPage
+    nextUrl,
+    previousUrl,
+    setPage,
+    goToNextPage,
+    goToPreviousPage
   } = useProductsStore();
 
   // Fetch products when filters or page changes
@@ -178,9 +182,11 @@ export default function Products() {
               {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
             </p>
             {/* Debug info */}
-            <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
+            {/* <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-xs">
               Debug: totalPages={totalPages}, currentPage={currentPage}, totalCount={totalCount}, products.length={products.length}
-            </div>
+              <br />
+              Next URL: {nextUrl ? 'Available' : 'None'} | Previous URL: {previousUrl ? 'Available' : 'None'}
+            </div> */}
           </div>
         )}
 
@@ -199,6 +205,10 @@ export default function Products() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
+          onNextPage={goToNextPage}
+          onPreviousPage={goToPreviousPage}
+          hasNextPage={!!nextUrl}
+          hasPreviousPage={!!previousUrl}
           isLoading={isLoading}
         />
       </main>

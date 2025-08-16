@@ -1,21 +1,20 @@
 import { userApi } from "@/lib/api";
 import { User } from "@/types";
-import { useQuery, useMutation, UseQueryOptions, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authKeys } from "@/hooks/useAuth";
 
 // hooks/useUsers.ts
 export const useUsers = () => {
   return useQuery<User[], Error>({
     queryKey: ['users'],
-    queryFn: () => userApi.getUsers(), // Your backend should expose this for admins
+    queryFn: () => userApi.getUsers(),
     onError: () => {
       console.error("Failed to fetch users");
     },
     onSuccess: () => {
       console.log("Users fetched successfully");
     },
-  } as UseQueryOptions<User[], Error> // 👈 This fixes the TS error
-);
+  });
 };
 
 export const useUpdateCurrentUser = () => {
@@ -62,7 +61,7 @@ export const useDeleteAddress = () => {
 
 export const useUpdateUserRole = () => {
   const qc = useQueryClient();
-  return useMutation<any, Error, { id: string; role: string }>({
+  return useMutation<User, Error, { id: string; role: string }>({
     mutationFn: ({ id, role }) => userApi.updateUserRole(id, role),
     onSuccess: () => {
       // Invalidate users query to refresh the list

@@ -15,6 +15,8 @@ interface ProductsState {
   totalPages: number;
   totalCount: number;
   pageSize: number;
+  nextUrl: string | null;
+  previousUrl: string | null;
   
   // Actions
   fetchProducts: (filters?: any, page?: number) => Promise<void>;
@@ -29,6 +31,8 @@ interface ProductsState {
   setPage: (page: number) => void;
   nextPage: () => void;
   prevPage: () => void;
+  goToNextPage: () => Promise<void>;
+  goToPreviousPage: () => Promise<void>;
   
   // Selectors
   getProductById: (productId: string) => Product | undefined;
@@ -48,6 +52,8 @@ export const useProductsStore = create<ProductsState>()(
       totalPages: 1,
       totalCount: 0,
       pageSize: 10, // Default page size
+      nextUrl: null,
+      previousUrl: null,
 
       fetchProducts: async (filters?: any, page?: number) => {
         set({ isLoading: true });
@@ -59,38 +65,31 @@ export const useProductsStore = create<ProductsState>()(
           console.log('Products API response:', response);
           console.log('Response structure:', {
             results: response.results?.length,
-            pagination: response.pagination,
             count: response.count,
-            total_pages: response.total_pages,
-            page: response.page
+            next: response.next,
+            previous: response.previous,
+            pagination: response.pagination
           });
           
-          // Handle different pagination response structures
-          let totalCount = 0;
+          // Handle pagination response structure with next/previous URLs
+          let totalCount = response.count || 0;
           let totalPages = 1;
-          let currentPageNum = 1;
+          let currentPageNum = page || get().currentPage;
           
-          if (response.pagination) {
-            // New pagination structure
-            totalCount = response.pagination.total || 0;
-            totalPages = response.pagination.totalPages || 1;
-            currentPageNum = response.pagination.page || 1;
-            console.log('Using new pagination structure:', { totalCount, totalPages, currentPageNum });
-          } else if (response.count !== undefined) {
-            // Legacy pagination structure
-            totalCount = response.count || 0;
-            totalPages = response.total_pages || 1;
-            currentPageNum = response.page || 1;
-            console.log('Using legacy pagination structure:', { totalCount, totalPages, currentPageNum });
-          } else {
-            console.log('No pagination structure found, using defaults');
+          // Calculate total pages based on count and page size
+          if (totalCount > 0 && get().pageSize > 0) {
+            totalPages = Math.ceil(totalCount / get().pageSize);
           }
+          
+          console.log('Pagination calculated:', { totalCount, totalPages, currentPageNum });
           
           set({ 
             products: response.results || [], 
             totalCount,
             totalPages,
-            currentPage: currentPageNum
+            currentPage: currentPageNum,
+            nextUrl: response.next,
+            previousUrl: response.previous
           });
           console.log('Store updated with:', { totalCount, totalPages, currentPage: currentPageNum });
         } catch (error) {
@@ -159,7 +158,15 @@ export const useProductsStore = create<ProductsState>()(
       },
 
       clearProducts: () => {
-        set({ products: [], featuredProducts: [], currentPage: 1, totalPages: 1, totalCount: 0 });
+        set({ 
+          products: [], 
+          featuredProducts: [], 
+          currentPage: 1, 
+          totalPages: 1, 
+          totalCount: 0,
+          nextUrl: null,
+          previousUrl: null
+        });
       },
 
       forceRefreshProducts: async () => {
@@ -188,6 +195,8 @@ export const useProductsStore = create<ProductsState>()(
             totalCount,
             totalPages,
             currentPage: 1,
+            nextUrl: response.next,
+            previousUrl: response.previous,
             isLoading: false 
           });
         } catch (error) {
@@ -207,6 +216,70 @@ export const useProductsStore = create<ProductsState>()(
       prevPage: () => {
         set(state => ({ currentPage: Math.max(state.currentPage - 1, 1) }));
       },
+      goToNextPage: async () => {
+        const state = get();
+        if (state.nextUrl) {
+          set({ isLoading: true });
+          try {
+            console.log('Fetching next page using URL:', state.nextUrl);
+            const response = await productApi.getProductsFromUrl(state.nextUrl);
+            console.log('Next page response:', response);
+            
+            let totalCount = response.count || 0;
+            let totalPages = 1;
+            
+            // Calculate total pages based on count and page size
+            if (totalCount > 0 && state.pageSize > 0) {
+              totalPages = Math.ceil(totalCount / state.pageSize);
+            }
+            
+            set({ 
+              products: response.results || [], 
+              totalCount,
+              totalPages,
+              currentPage: state.currentPage + 1,
+              nextUrl: response.next,
+              previousUrl: response.previous,
+              isLoading: false
+            });
+          } catch (error) {
+            console.error('Error fetching next page:', error);
+            set({ isLoading: false });
+          }
+        }
+      },
+      goToPreviousPage: async () => {
+        const state = get();
+        if (state.previousUrl) {
+          set({ isLoading: true });
+          try {
+            console.log('Fetching previous page using URL:', state.previousUrl);
+            const response = await productApi.getProductsFromUrl(state.previousUrl);
+            console.log('Previous page response:', response);
+            
+            let totalCount = response.count || 0;
+            let totalPages = 1;
+            
+            // Calculate total pages based on count and page size
+            if (totalCount > 0 && state.pageSize > 0) {
+              totalPages = Math.ceil(totalCount / state.pageSize);
+            }
+            
+            set({ 
+              products: response.results || [], 
+              totalCount,
+              totalPages,
+              currentPage: state.currentPage - 1,
+              nextUrl: response.next,
+              previousUrl: response.previous,
+              isLoading: false
+            });
+          } catch (error) {
+            console.error('Error fetching previous page:', error);
+            set({ isLoading: false });
+          }
+        }
+      },
 
       // Selectors
       getProductById: (productId: string) => {
@@ -225,7 +298,9 @@ export const useProductsStore = create<ProductsState>()(
         currentPage: state.currentPage,
         totalPages: state.totalPages,
         totalCount: state.totalCount,
-        pageSize: state.pageSize
+        pageSize: state.pageSize,
+        nextUrl: state.nextUrl,
+        previousUrl: state.previousUrl
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -247,6 +322,12 @@ export const useProductsStore = create<ProductsState>()(
           }
           if (typeof state.pageSize !== 'number') {
             state.pageSize = 10;
+          }
+          if (typeof state.nextUrl !== 'string' && state.nextUrl !== null) {
+            state.nextUrl = null;
+          }
+          if (typeof state.previousUrl !== 'string' && state.previousUrl !== null) {
+            state.previousUrl = null;
           }
         }
       },
