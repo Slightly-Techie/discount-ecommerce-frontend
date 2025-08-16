@@ -20,6 +20,7 @@ export function RegisterForm() {
     date_of_birth: "",
     gender: "",
     role: "customer",
+    metadata: {},
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -87,9 +88,10 @@ export function RegisterForm() {
         date_of_birth: formData.date_of_birth,
         gender: formData.gender,
         role: formData.role,
+        metadata: formData.metadata,
       });
     } catch (error: any) {
-      console.error("Registration error:", error);
+      // Error is handled by the mutation's onError callback
     }
   };
 
@@ -164,7 +166,7 @@ export function RegisterForm() {
             <Label htmlFor="password">Password</Label>
             <Input
               id="password"
-              type="text"
+              type="password"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
               placeholder="Enter your password"

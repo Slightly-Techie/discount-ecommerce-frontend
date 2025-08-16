@@ -92,12 +92,24 @@ export interface RegisterData {
   date_of_birth: string;
   gender: string;
   role: string;
+  metadata?: Record<string, any>;
 }
 
 export interface AuthResponse {
-  access: string;
-  refresh: string;
+  access?: string;
+  refresh?: string;
   user?: any;
+  id?: string;
+  email?: string;
+  phonenumber?: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
+  password?: string;
+  date_of_birth?: string;
+  gender?: string;
+  role?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface RefreshTokenData {
@@ -144,11 +156,6 @@ export interface ApiError {
   errors?: Record<string, string[]>;
   status?: number;
 } 
-
-export interface Category {
-  id: string;
-  name: string;
-}
 
 export enum UserRole {
   SELLER = 'seller',

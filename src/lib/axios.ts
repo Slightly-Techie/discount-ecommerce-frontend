@@ -10,6 +10,8 @@ interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://54.235.34.229/api';
 const API_TIMEOUT = 10000; // 10 seconds
 
+export { API_BASE_URL };
+
 // Create axios instance
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -39,7 +41,13 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
     
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    // Skip token refresh for authentication endpoints to prevent infinite loops
+    const authEndpoints = ['/auth/token/', '/auth/token/refresh/', '/auth/register/', '/users/register/'];
+    const isAuthEndpoint = authEndpoints.some(endpoint => 
+      originalRequest.url?.includes(endpoint)
+    );
+    
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
       
       try {
