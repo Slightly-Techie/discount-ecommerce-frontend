@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, Layers, Users, LogOut, Upload } from "lucide-react";
-import { Header } from "@/components/Header";
+import { Layout } from "@/components/Layout";
 import ProductManager from "@/components/ProductManager";
 import CategoryManager from "@/components/CategoryManager";
 import { BulkUploadProducts } from "@/components/BulkUploadProducts";
@@ -78,7 +78,6 @@ export default function Admin() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <Header />
         <div className="p-6">
           {activeTab === "products" && <ProductManager />}
           {activeTab === "bulk-upload" && <BulkUploadProducts />}

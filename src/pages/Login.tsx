@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/LoginForm";
-import { Header } from "@/components/Header";
+import { Layout } from "@/components/Layout";
 import { Footer } from "@/components/Footer";
 import { useLocation } from "react-router-dom";
 
@@ -8,9 +8,7 @@ export default function Login() {
   const from = location.state?.from?.pathname || "/";
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
+    <Layout>
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
@@ -25,6 +23,6 @@ export default function Login() {
       </main>
 
       <Footer />
-    </div>
+    </Layout>
   );
 } 

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Header } from "@/components/Header";
+import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ProductGrid } from "@/components/ProductGrid";
 import { Product } from "@/types/product";
@@ -35,9 +35,7 @@ function FavoritesContent() {
 
   if (!isLoading && favorites.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        
+      <Layout>
         <main className="container mx-auto px-4 py-16">
           <div className="text-center max-w-md mx-auto">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
@@ -55,14 +53,12 @@ function FavoritesContent() {
             </Link>
           </div>
         </main>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
+    <Layout>
       <main className="container mx-auto px-4 py-6">
         <div className="mb-8">
           <Link to="/products" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4">
@@ -101,7 +97,7 @@ function FavoritesContent() {
           </Link>
         </div>
       </main>
-    </div>
+    </Layout>
   );
 }
 

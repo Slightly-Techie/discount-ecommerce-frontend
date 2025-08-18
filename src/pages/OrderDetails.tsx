@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { Header } from "@/components/Header";
+import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useOrder } from "@/hooks/useOrders";
@@ -16,8 +16,7 @@ function OrderDetailsContent() {
   console.log('OrderDetails - error:', error);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <Layout>
       <main className="container mx-auto px-4 py-8">
         <Link to="/orders">
           <Button variant="ghost" className="mb-4"><ArrowLeft className="h-4 w-4 mr-2"/>Back to Orders</Button>
@@ -70,7 +69,7 @@ function OrderDetailsContent() {
           </Card>
         )}
       </main>
-    </div>
+    </Layout>
   );
 }
 

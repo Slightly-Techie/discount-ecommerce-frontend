@@ -1,12 +1,10 @@
 import { RegisterForm } from "@/components/RegisterForm";
-import { Header } from "@/components/Header";
+import { Layout } from "@/components/Layout";
 import { Footer } from "@/components/Footer";
 
 export default function Register() {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
+    <Layout>
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
@@ -21,6 +19,6 @@ export default function Register() {
       </main>
 
       <Footer />
-    </div>
+    </Layout>
   );
 } 

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Header } from "@/components/Header";
+import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,8 +40,7 @@ function OrdersContent() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <Layout>
       <main className="container mx-auto px-4 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-3xl font-bold">My Orders</h1>
@@ -90,7 +89,7 @@ function OrdersContent() {
           )
         )}
       </main>
-    </div>
+    </Layout>
   );
 }
 

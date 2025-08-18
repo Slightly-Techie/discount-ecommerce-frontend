@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Header } from "@/components/Header";
+import { Layout } from "@/components/Layout";
 import { Product } from "@/types/product";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -227,11 +227,7 @@ function CartContent() {
 
   if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header 
-          favoritesCount={0}
-        />
-        
+      <Layout favoritesCount={0}>
         <main className="container mx-auto px-4 py-16">
           <div className="text-center max-w-md mx-auto">
             <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
@@ -249,16 +245,12 @@ function CartContent() {
             </Link>
           </div>
         </main>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
-        favoritesCount={0}
-      />
-      
+    <Layout favoritesCount={0}>
       <main className="container mx-auto px-4 py-6">
         <div className="mb-6">
           <Link to="/products" className="inline-flex items-center text-muted-foreground hover:text-foreground mb-4">
@@ -433,7 +425,7 @@ function CartContent() {
           </div>
         </div>
       </main>
-    </div>
+    </Layout>
   );
 }
 

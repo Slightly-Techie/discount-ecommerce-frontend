@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Header } from "@/components/Header";
+import { Layout } from "@/components/Layout";
 import { SearchAndFilter } from "@/components/SearchAndFilter";
 import { ProductGrid } from "@/components/ProductGrid";
 import { Pagination } from "@/components/Pagination";
@@ -141,11 +141,7 @@ export default function Products() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
-        favoritesCount={favoriteIds.size}
-      />
-      
+    <Layout favoritesCount={favoriteIds.size}>
       <main className="container mx-auto px-4 py-6">
         {/* Page Header */}
         <div className="mb-8">
@@ -215,6 +211,6 @@ export default function Products() {
 
       {/* Footer */}
       <Footer />
-    </div>
+    </Layout>
   );
 }

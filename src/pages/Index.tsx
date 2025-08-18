@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Header } from "@/components/Header";
+import { Layout } from "@/components/Layout";
 import { ProductGrid } from "@/components/ProductGrid";
 import { Product } from "@/types/product";
 import { useToast } from "@/hooks/use-toast";
@@ -82,10 +82,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header 
-        favoritesCount={favoriteProductsData?.length}
-      />
+    <Layout favoritesCount={favoriteProductsData?.length}>
       
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-hero py-16 md:py-24">
@@ -232,7 +229,7 @@ const Index = () => {
 
       {/* Footer */}
       <Footer />
-    </div>
+    </Layout>
   );
 };
 
