@@ -1,16 +1,35 @@
-# Welcome to your E-Commerce project
+# Whammo - E-Commerce Discount Platform
 
-## Project info
+## Project Overview
 
+Whammo is a modern e-commerce platform that aggregates discounted products from major retailers like Shoprite and Melcom. Built with React, TypeScript, and modern web technologies, it provides users with a seamless shopping experience to discover and purchase discounted products.
+
+## Features
+
+- **Product Browsing**: Browse products with search and filtering capabilities
+- **Shopping Cart**: Add items to cart with guest and authenticated user support
+- **Favorites**: Save products to wishlist
+- **User Authentication**: Secure login/register with JWT tokens
+- **Admin Dashboard**: Product and user management for administrators
+- **Responsive Design**: Mobile-first approach with beautiful UI
+- **Real-time Updates**: Optimistic UI updates and automatic data synchronization
+
+## Tech Stack
+
+- **Frontend**: React 18, TypeScript, Vite
+- **UI Library**: shadcn/ui, Tailwind CSS, Radix UI
+- **State Management**: Zustand, TanStack Query
+- **Routing**: React Router DOM
+- **HTTP Client**: Axios with interceptors
+- **Authentication**: JWT with refresh tokens
 
 ## How can I edit this code?
 
-There are several ways of editing your application.
-
+There are several ways of editing your application:
 
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -58,10 +77,29 @@ This project is built with:
 
 USe Netlify or any other free deployment platform
 
-## Can I connect a custom domain to my Lovable project?
+## Deployment
 
-Yes, you can!
+This project can be deployed to any modern hosting platform that supports Node.js applications.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Recommended Platforms
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- **Vercel**: Optimized for React applications with automatic deployments
+- **Netlify**: Great for static sites with serverless functions
+- **Railway**: Full-stack deployment with database support
+- **Heroku**: Traditional hosting with easy scaling
+
+### Environment Variables
+
+Make sure to set the following environment variables in your deployment platform:
+
+```env
+VITE_API_BASE_URL=your_api_base_url
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
