@@ -10,7 +10,7 @@ import {
   Settings,
   LogOut,
   UserCircle,
-  List
+  List,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsAuthenticated, useLogout } from "@/hooks/useAuth";
@@ -29,22 +29,19 @@ interface HeaderProps {
   onMenuToggle?: () => void;
 }
 
-export function Header({
-  favoritesCount = 0,
-  onMenuToggle,
-}: HeaderProps) {
+export function Header({ favoritesCount = 0, onMenuToggle }: HeaderProps) {
   const { isAuthenticated, user } = useIsAuthenticated();
   const logoutMutation = useLogout();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  
+
   // Subscribe to cart changes and derive count
   const cartItemsCount = useCartStore((state) =>
     (state.cart || []).reduce((total, item) => total + (item?.quantity || 0), 0)
   );
-  
+
   // Debug cart count updates
-  console.log('Header - Cart count:', cartItemsCount);
+  console.log("Header - Cart count:", cartItemsCount);
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -52,7 +49,7 @@ export function Header({
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b my-3">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Mobile Menu Button */}
@@ -66,26 +63,25 @@ export function Header({
           </Button>
 
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <ShoppingBag className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              Whammo
-            </span>
+          <Link to="/" className="flex items-center">
+            <img
+              src="/icons/Main Logo.svg"
+              alt="GrottoMore Logo"
+              className="h-20 w-52"
+            />
           </Link>
 
           {/* Navigation Links - Desktop */}
           <nav className="hidden md:flex items-center space-x-6">
             <Link
               to="/"
-              className="text-sm font-medium hover:text-primary transition-colors"
+              className="text-lg font-medium hover:text-primary transition-colors"
             >
               Home
             </Link>
             <Link
               to="/products"
-              className="text-sm font-medium hover:text-primary transition-colors"
+              className="text-lg font-medium hover:text-primary transition-colors"
             >
               Products
             </Link>
@@ -98,7 +94,7 @@ export function Header({
                 Hi, {user?.first_name || "User"}
               </span>
             )}
-            
+
             {/* Favorites */}
             <Link to="/favorites">
               <Button variant="ghost" size="icon" className="relative">

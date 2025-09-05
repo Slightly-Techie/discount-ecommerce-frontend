@@ -1,8 +1,8 @@
-# Whammo - E-Commerce Discount Platform
+# GrottoMore - E-Commerce Discount Platform
 
 ## Project Overview
 
-Whammo is a modern e-commerce platform that aggregates discounted products from major retailers like Shoprite and Melcom. Built with React, TypeScript, and modern web technologies, it provides users with a seamless shopping experience to discover and purchase discounted products.
+GrottoMore is a modern e-commerce platform that aggregates discounted products from major retailers like Shoprite and Melcom. Built with React, TypeScript, and modern web technologies, it provides users with a seamless shopping experience to discover and purchase discounted products.
 
 ## Features
 

@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Facebook, 
-  Twitter, 
-  Instagram, 
-  Mail, 
-  Phone, 
+import {
+  Facebook,
+  Twitter,
+  Instagram,
+  Mail,
+  Phone,
   MapPin,
-  ShoppingBag
+  ShoppingBag,
 } from "lucide-react";
 
 export function Footer() {
@@ -18,22 +18,34 @@ export function Footer() {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-primary rounded flex items-center justify-center">
-                <ShoppingBag className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-bold text-lg">Whammo</span>
+              <img
+                src="/icons/Main Logo.svg"
+                alt="GrottoMore Logo"
+                className="h-8 w-8"
+              />
+              <span className="font-bold text-lg">GrottoMore</span>
             </div>
             <p className="text-muted-foreground text-sm">
-              Your ultimate destination for discovering amazing discounts and deals from top retailers like Shoprite and Melcom.
+              Your ultimate destination for discovering amazing discounts and
+              deals from top retailers like Shoprite and Melcom.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="#"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="#"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="#"
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
                 <Instagram className="h-5 w-5" />
               </a>
             </div>
@@ -43,16 +55,28 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="font-semibold">Quick Links</h3>
             <div className="space-y-2 text-sm">
-              <Link to="/" className="block text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                to="/"
+                className="block text-muted-foreground hover:text-primary transition-colors"
+              >
                 Home
               </Link>
-              <Link to="/products" className="block text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                to="/products"
+                className="block text-muted-foreground hover:text-primary transition-colors"
+              >
                 All Products
               </Link>
-              <Link to="/favorites" className="block text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                to="/favorites"
+                className="block text-muted-foreground hover:text-primary transition-colors"
+              >
                 My Favorites
               </Link>
-              <Link to="/cart" className="block text-muted-foreground hover:text-primary transition-colors">
+              <Link
+                to="/cart"
+                className="block text-muted-foreground hover:text-primary transition-colors"
+              >
                 Shopping Cart
               </Link>
             </div>
@@ -62,16 +86,28 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="font-semibold">Categories</h3>
             <div className="space-y-2 text-sm">
-              <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="#"
+                className="block text-muted-foreground hover:text-primary transition-colors"
+              >
                 Electronics
               </a>
-              <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="#"
+                className="block text-muted-foreground hover:text-primary transition-colors"
+              >
                 Home & Garden
               </a>
-              <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="#"
+                className="block text-muted-foreground hover:text-primary transition-colors"
+              >
                 Food & Beverages
               </a>
-              <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">
+              <a
+                href="#"
+                className="block text-muted-foreground hover:text-primary transition-colors"
+              >
                 Health & Beauty
               </a>
             </div>
@@ -91,7 +127,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span>hello@whammo.com</span>
+                <span>hello@grottomore.com</span>
               </div>
             </div>
           </div>
@@ -100,9 +136,7 @@ export function Footer() {
         <Separator className="my-8" />
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <div>
-            © 2024 Whammo. All rights reserved.
-          </div>
+          <div>© 2024 GrottoMore. All rights reserved.</div>
           <div className="flex gap-6">
             <a href="#" className="hover:text-primary transition-colors">
               Privacy Policy

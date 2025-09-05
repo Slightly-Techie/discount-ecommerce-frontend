@@ -20,7 +20,7 @@ import {
   List,
   Home,
   Package,
-  X
+  X,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsAuthenticated, useLogout } from "@/hooks/useAuth";
@@ -40,7 +40,7 @@ export function MobileSidebar({
   const { isAuthenticated, user } = useIsAuthenticated();
   const logoutMutation = useLogout();
   const navigate = useNavigate();
-  
+
   // Subscribe to cart changes and derive count
   const cartItemsCount = useCartStore((state) =>
     (state.cart || []).reduce((total, item) => total + (item?.quantity || 0), 0)
@@ -60,13 +60,12 @@ export function MobileSidebar({
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0">
         <SheetHeader className="p-6 border-b">
-          <SheetTitle className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <ShoppingBag className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-              Whammo
-            </span>
+          <SheetTitle className="flex items-center">
+            <img
+              src="/icons/Main Logo.svg"
+              alt="GrottoMore Logo"
+              className="h-10 w-10"
+            />
           </SheetTitle>
         </SheetHeader>
 
@@ -97,7 +96,7 @@ export function MobileSidebar({
               <h3 className="text-sm font-medium text-muted-foreground mb-3">
                 Quick Actions
               </h3>
-              
+
               <Button
                 variant="ghost"
                 className="w-full justify-start text-lg h-12"
@@ -221,11 +220,7 @@ export function MobileSidebar({
 
           {/* Close Button */}
           <div className="p-6 border-t">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={onClose}
-            >
+            <Button variant="outline" className="w-full" onClick={onClose}>
               <X className="mr-2 h-4 w-4" />
               Close Menu
             </Button>

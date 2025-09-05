@@ -1,8 +1,8 @@
 {
-  "name": "whammo-ecommerce",
+  "name": "grottomore-ecommerce",
   "private": true,
   "version": "1.0.0",
-  "description": "Whammo - Modern e-commerce platform for discovering discounted products from major retailers",
+  "description": "GrottoMore - Modern e-commerce platform for discovering discounted products from major retailers",
   "type": "module",
   "scripts": {
     "dev": "vite",
