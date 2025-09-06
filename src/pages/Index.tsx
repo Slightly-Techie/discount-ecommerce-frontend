@@ -98,8 +98,7 @@ const Index = () => {
             </span>
           </h1>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Find the best discounted products from top retailers all over and more. Save big on electronics, food, home goods, and
-            more!
+            Find the best discounted products from top retailers all over Ghana and more. Save big on electronics, food, and any otherconsumer products!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/products">
@@ -197,13 +196,8 @@ const Index = () => {
               <div className="w-24 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <span className="text-2xl font-bold text-white">Promos</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">
-                “Find the best promo products from the biggest
-                retailers in Ghana and more.
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                Electronics, appliances, and more
-              </p>
+              <h3 className="text-xl font-semibold mb-2">Shoprite</h3>
+              <p className="text-muted-foreground mb-4">Electronics, appliances, and more</p>
               <Badge variant="secondary">
                 {products.filter((p) => p.brand === "shoprite").length}{" "}
                 products
