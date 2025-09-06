@@ -83,7 +83,6 @@ const Index = () => {
 
   return (
     <Layout favoritesCount={favoriteProductsData?.length}>
-      
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-hero py-16 md:py-24">
         <div className="absolute inset-0 bg-grid-white/10 bg-grid-16 [mask-image:radial-gradient(ellipse_at_center,white,transparent)]" />
@@ -99,18 +98,25 @@ const Index = () => {
             </span>
           </h1>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Find the best discounted products from top retailers like Shoprite and Melcom. 
-            Save big on electronics, food, home goods, and more!
+            Find the best discounted products from top retailers all over and more. Save big on electronics, food, home goods, and
+            more!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/products">
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+              <Button
+                size="lg"
+                className="bg-white text-primary hover:bg-white/90"
+              >
                 <ShoppingBag className="h-5 w-5 mr-2" />
                 Shop Now
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
             </Link>
-            <Button size="lg" variant="outline" className="border-white text-primary hover:bg-white/10">
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-white text-primary hover:bg-white/10"
+            >
               View Hot Deals
             </Button>
           </div>
@@ -125,15 +131,17 @@ const Index = () => {
               <div className="text-3xl font-bold text-primary mb-2">500+</div>
               <div className="text-muted-foreground">Products</div>
             </div>
-            <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
-              <div className="text-3xl font-bold text-success mb-2">Up to 70%</div>
+            <div className="animate-fade-in" style={{ animationDelay: "0.1s" }}>
+              <div className="text-3xl font-bold text-success mb-2">
+                Up to 70%
+              </div>
               <div className="text-muted-foreground">Discounts</div>
             </div>
-            <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="animate-fade-in" style={{ animationDelay: "0.2s" }}>
               <div className="text-3xl font-bold text-accent mb-2">2</div>
               <div className="text-muted-foreground">Top Retailers</div>
             </div>
-            <div className="animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <div className="animate-fade-in" style={{ animationDelay: "0.3s" }}>
               <div className="text-3xl font-bold text-warning mb-2">Daily</div>
               <div className="text-muted-foreground">New Deals</div>
             </div>
@@ -151,17 +159,18 @@ const Index = () => {
             </Badge>
             <h2 className="text-3xl font-bold mb-4">Featured Deals</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Don't miss out on these incredible savings from our partner retailers
+              Don't miss out on these incredible savings from our partner
+              retailers
             </p>
           </div>
-          
+
           <ProductGrid
             products={featuredProducts}
             onAddToCart={handleAddToCart}
             onToggleFavorite={handleToggleFavorite}
             favorites={[...favoriteIds]}
           />
-          
+
           <div className="text-center mt-8">
             <Link to="/products">
               <Button size="lg" variant="outline">
@@ -182,27 +191,37 @@ const Index = () => {
               Discover deals from your favorite retailers
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
             <div className="group bg-card rounded-lg p-8 text-center hover:shadow-card-hover transition-all duration-300 cursor-pointer">
-              <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-bold text-white">S</span>
+              <div className="w-24 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <span className="text-2xl font-bold text-white">Promos</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Shoprite</h3>
-              <p className="text-muted-foreground mb-4">Electronics, appliances, and more</p>
+              <h3 className="text-xl font-semibold mb-2">
+                “Find the best promo products from the biggest
+                retailers in Ghana and more.
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Electronics, appliances, and more
+              </p>
               <Badge variant="secondary">
-                {products.filter(p => p.brand === 'Shoprite').length} products
+                {products.filter((p) => p.brand === "shoprite").length}{" "}
+                products
               </Badge>
             </div>
-            
+
             <div className="group bg-card rounded-lg p-8 text-center hover:shadow-card-hover transition-all duration-300 cursor-pointer">
-              <div className="w-16 h-16 bg-gradient-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <span className="text-2xl font-bold text-white">M</span>
+              <div className="w-28 h-16 bg-gradient-accent rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <span className="text-2xl font-bold text-white">Discount</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Melcom</h3>
-              <p className="text-muted-foreground mb-4">Home goods, food, and lifestyle</p>
+              <h3 className="text-xl font-semibold mb-2">
+                The best deals on consumer products ready for you on the Go!
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                Home goods, food, and lifestyle
+              </p>
               <Badge variant="secondary">
-                {products.filter(p => p.brand === 'Melcom').length} products
+                {products.filter((p) => p.brand === "melcom").length} products
               </Badge>
             </div>
           </div>
@@ -216,10 +235,14 @@ const Index = () => {
             Ready to Start Saving?
           </h2>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Join thousands of shoppers who save money every day with our curated deals
+            Join thousands of shoppers who save money every day with our curated
+            deals
           </p>
           <Link to="/products">
-            <Button size="lg" className="bg-white text-primary hover:bg-white/90">
+            <Button
+              size="lg"
+              className="bg-white text-primary hover:bg-white/90"
+            >
               <ShoppingBag className="h-5 w-5 mr-2" />
               Start Shopping
             </Button>
