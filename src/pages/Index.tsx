@@ -198,8 +198,8 @@ const Index = () => {
               </div>
               <h3 className="text-xl font-semibold mb-2">Shoprite</h3>
               <p className="text-muted-foreground mb-4">Electronics, appliances, and more</p>
-              <h3 className="text-xl font-semibold mb-2">Shoprite</h3>
-              <p className="text-muted-foreground mb-4">Electronics, appliances, and more</p>
+              {/* <h3 className="text-xl font-semibold mb-2">Shoprite</h3>
+              <p className="text-muted-foreground mb-4">Electronics, appliances, and more</p> */}
               <Badge variant="secondary">
                 {products.filter((p) => p.brand === "shoprite").length}{" "}
                 products
