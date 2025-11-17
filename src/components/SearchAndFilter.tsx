@@ -18,10 +18,16 @@ interface FilterOptions {
   sortBy: string;
 }
 
+interface CategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 interface SearchAndFilterProps {
   filters: FilterOptions;
   onFilterChange: (filters: FilterOptions) => void;
-  categories: string[];
+  categories: CategoryOption[];
   brands: string[];
 }
 
@@ -64,15 +70,15 @@ export function SearchAndFilter({
       {/* Filter Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {/* Category Filter */}
-        <Select value={filters.category} onValueChange={(value) => updateFilter("category", value)}>
+        <Select value={filters.category || "all"} onValueChange={(value) => updateFilter("category", value)}>
           <SelectTrigger>
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
             {categories?.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -137,7 +143,7 @@ export function SearchAndFilter({
             )}
             {filters.category && (
               <Badge variant="secondary" className="gap-1">
-                Category: {filters.category}
+                Category: {categories.find(c => c.id === filters.category)?.name || filters.category}
                 <X 
                   className="h-3 w-3 cursor-pointer" 
                   onClick={() => updateFilter("category", "")}

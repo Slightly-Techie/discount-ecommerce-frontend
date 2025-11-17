@@ -8,7 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 import { Footer } from "@/components/Footer";
 import { useCartStore } from "@/store/cartStore";
 import { useProductsStore } from "@/store/productsStore";
-import { useFavorites, useFavoriteHelpers, useFavoritesAuthBinding } from "@/hooks/useFavorites";
+import {
+  useFavorites,
+  useFavoriteHelpers,
+  useFavoritesAuthBinding,
+} from "@/hooks/useFavorites";
+import { useCategories } from "@/hooks/useCategories";
 
 interface FilterOptions {
   search: string;
@@ -25,15 +30,15 @@ export default function Products() {
     category: "",
     brand: "",
     priceRange: "",
-    sortBy: "name"
+    sortBy: "name",
   });
-  
+
   // Favorites
   useFavoritesAuthBinding();
   const { data: favoriteProductsData } = useFavorites();
   const { addFavorite, removeFavorite } = useFavoriteHelpers();
   const favoriteIds = new Set((favoriteProductsData || []).map((p) => p.id));
-  
+
   // Cart store
   const cartItems = useCartStore((state) => state.cart);
   const addToCart = useCartStore((state) => state.addToCart);
@@ -41,9 +46,9 @@ export default function Products() {
   const getCartItemCount = useCartStore((state) => state.getCartItemCount);
 
   // Products store with pagination
-  const { 
-    products, 
-    isLoading, 
+  const {
+    products,
+    isLoading,
     fetchProducts,
     currentPage,
     totalPages,
@@ -52,7 +57,7 @@ export default function Products() {
     previousUrl,
     setPage,
     goToNextPage,
-    goToPreviousPage
+    goToPreviousPage,
   } = useProductsStore();
 
   // Fetch products when filters or page changes
@@ -64,12 +69,13 @@ export default function Products() {
       price_range: filters.priceRange || undefined,
       ordering: filters.sortBy || undefined,
     };
-    
+
     // Remove undefined values
     const cleanFilters = Object.fromEntries(
       Object.entries(apiFilters).filter(([_, value]) => value !== undefined)
     );
-    
+
+    console.log("Fetching products with filters:", cleanFilters);
     fetchProducts(cleanFilters, currentPage);
   }, [fetchProducts, filters, currentPage]);
 
@@ -77,7 +83,7 @@ export default function Products() {
   const handlePageChange = (page: number) => {
     setPage(page);
     // Scroll to top when page changes
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Handle filter changes
@@ -87,22 +93,30 @@ export default function Products() {
     setPage(1);
   };
 
-  // Ensure unique category names (strings) to avoid duplicate keys
+  // Fetch all categories from API (not filtered by current products)
+  const { data: categoriesData = [] } = useCategories();
+
+  // Transform categories to match SearchAndFilter format
   const categories = useMemo(() => {
-    const names = products.map(p => p.category?.name).filter(Boolean) as string[];
-    return Array.from(new Set(names)).sort();
-  }, [products]);
-  
-  const brands = useMemo(() => 
-    Array.from(new Set(products.map(p => p.brand))).sort(),
+    return categoriesData
+      .map((cat) => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug || "",
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [categoriesData]);
+
+  const brands = useMemo(
+    () => Array.from(new Set(products.map((p) => p.brand))).sort(),
     [products]
   );
 
   const handleAddToCart = async (product: Product) => {
     try {
       // Check if user is authenticated
-      const accessToken = localStorage.getItem('accessToken');
-      
+      const accessToken = localStorage.getItem("accessToken");
+
       if (accessToken) {
         // User is authenticated, use API
         await addToCart({
@@ -111,9 +125,9 @@ export default function Products() {
         });
       } else {
         // User is not authenticated, use local storage
-        addToCartLocal(product, 1); 
+        addToCartLocal(product, 1);
       }
-      
+
       toast({
         title: "Added to cart!",
         description: `${product.name} has been added to your cart.`,
@@ -128,15 +142,15 @@ export default function Products() {
   };
 
   const handleToggleFavorite = async (productId: string) => {
-    const product = products.find(p => p.id === productId);
+    const product = products.find((p) => p.id === productId);
     if (!product) return;
 
     if (favoriteIds.has(productId)) {
       removeFavorite(productId);
-      toast({ title: 'Removed from favorites' });
+      toast({ title: "Removed from favorites" });
     } else {
       addFavorite(product);
-      toast({ title: 'Added to favorites' });
+      toast({ title: "Added to favorites" });
     }
   };
 
@@ -147,7 +161,8 @@ export default function Products() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Discover Amazing Deals</h1>
           <p className="text-muted-foreground">
-            Find the best discounted products from top retailers like Shoprite and Melcom
+            Find the best discounted products from top retailers like Shoprite
+            and Melcom
           </p>
         </div>
 
@@ -173,7 +188,8 @@ export default function Products() {
         {!isLoading && (
           <div className="mb-6">
             <p className="text-muted-foreground">
-              Showing {products.length} of {totalCount} product{totalCount !== 1 ? 's' : ''}
+              Showing {products.length} of {totalCount} product
+              {totalCount !== 1 ? "s" : ""}
               {filters.search && ` for "${filters.search}"`}
               {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
             </p>

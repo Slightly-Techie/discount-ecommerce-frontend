@@ -17,12 +17,6 @@ export const useCategories = () => {
           variant: "destructive",
         });
       },
-      onSuccess: () => {
-        toast({
-          title: "Success",
-          description: "Categories fetched successfully",
-        });
-      },
     } as UseQueryOptions<Category[], Error> // 👈 This fixes the TS error
   );
 };

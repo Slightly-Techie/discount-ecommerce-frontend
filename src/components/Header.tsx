@@ -97,32 +97,54 @@ export function Header({ favoritesCount = 0, onMenuToggle }: HeaderProps) {
 
             {/* Favorites */}
             <Link to="/favorites">
-              <Button variant="ghost" size="icon" className="relative">
-                <Heart className="h-5 w-5" />
-                {favoritesCount > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                  >
-                    {favoritesCount}
-                  </Badge>
-                )}
-              </Button>
+              <div className="relative group inline-block">
+                <Button variant="ghost" size="icon" className="relative">
+                  <Heart className="h-5 w-5" />
+                  {favoritesCount > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                    >
+                      {favoritesCount}
+                    </Badge>
+                  )}
+                </Button>
+
+                {/* Tooltip */}
+                <span
+                  className="absolute left-1/2 -bottom-8 -translate-x-1/2 whitespace-nowrap
+                     bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0
+                     group-hover:opacity-100 transition duration-200 pointer-events-none"
+                >
+                  Wishlist
+                </span>
+              </div>
             </Link>
 
             {/* Shopping Cart */}
             <Link to="/cart">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                {cartItemsCount > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                  >
-                    {cartItemsCount}
-                  </Badge>
-                )}
-              </Button>
+              <div className="relative group inline-block">
+                <Button variant="ghost" size="icon" className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartItemsCount > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                    >
+                      {cartItemsCount}
+                    </Badge>
+                  )}
+                </Button>
+
+                {/* Tooltip */}
+                <span
+                  className="absolute left-1/2 -bottom-8 -translate-x-1/2 whitespace-nowrap
+                     bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0
+                     group-hover:opacity-100 transition duration-200 pointer-events-none"
+                >
+                  Cart
+                </span>
+              </div>
             </Link>
 
             {/* User Menu */}
