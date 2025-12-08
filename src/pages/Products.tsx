@@ -161,8 +161,7 @@ export default function Products() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Discover Amazing Deals</h1>
           <p className="text-muted-foreground">
-            Find the best discounted products from top retailers like Shoprite
-            and Melcom
+            Find the best discounted products from top retailers
           </p>
         </div>
 

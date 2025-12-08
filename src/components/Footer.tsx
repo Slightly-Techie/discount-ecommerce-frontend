@@ -27,7 +27,7 @@ export function Footer() {
             </div>
             <p className="text-muted-foreground text-sm">
               Your ultimate destination for discovering amazing discounts and
-              deals from top retailers like Shoprite and Melcom.
+              deals from top retailers across Ghana.
             </p>
             <div className="flex space-x-4">
               <a
@@ -123,7 +123,7 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <span>+233 123 456 789</span>
+                <span>+233 54 855 5849</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />

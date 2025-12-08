@@ -196,7 +196,7 @@ const Index = () => {
               <div className="w-24 h-16 bg-gradient-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
                 <span className="text-2xl font-bold text-white">Promos</span>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Shoprite</h3>
+              <h3 className="text-xl font-semibold mb-2">Get all your gadgets and appliances at the best prices</h3>
               <p className="text-muted-foreground mb-4">Electronics, appliances, and more</p>
               {/* <h3 className="text-xl font-semibold mb-2">Shoprite</h3>
               <p className="text-muted-foreground mb-4">Electronics, appliances, and more</p> */}
