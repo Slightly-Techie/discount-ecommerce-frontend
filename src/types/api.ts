@@ -33,6 +33,8 @@ export interface ProductFilters {
   page?: number;
   page_size?: number;
   limit?: number;
+  // Optional: filter products by vendor (vendor ID)
+  vendor?: string;
 }
 
 export interface CreateProductData {
@@ -117,6 +119,42 @@ export interface AuthResponse {
 
 export interface RefreshTokenData {
   refresh: string;
+}
+
+// Vendor API Types
+export interface VendorSignupData {
+  email: string;
+  phonenumber: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  vendor_name: string;
+}
+
+export interface Vendor {
+  id: string;
+  name: string;
+  slug: string;
+  status: 'pending' | 'approved' | 'rejected' | 'suspended';
+  rejection_reason?: string;
+  business_email: string;
+  phone: string;
+  address?: string;
+  logo?: string;
+  website?: string;
+  about?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VendorUpdatePayload {
+  name?: string;
+  business_email?: string;
+  phone?: string;
+  address?: string;
+  logo?: string;
+  website?: string;
+  about?: string;
 }
 
 export interface VerifyTokenData {

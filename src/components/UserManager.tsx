@@ -18,7 +18,7 @@ const UserManager = () => {
   const [roleFilter, setRoleFilter] = useState<string>("all");
 
   // Filter users based on search term and role filter
-  const filteredUsers = users?.filter((user: User) => {
+  const filteredUsers = (users as User[])?.filter((user: User) => {
     const matchesSearch = user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -217,7 +217,7 @@ const UserManager = () => {
         {/* Summary */}
         <div className="mt-6 pt-4 border-t">
           <p className="text-sm text-muted-foreground">
-            Showing {filteredUsers.length} of {users?.length || 0} users
+            Showing {filteredUsers.length} of {(users as User[])?.length || 0} users
           </p>
         </div>
       </CardContent>

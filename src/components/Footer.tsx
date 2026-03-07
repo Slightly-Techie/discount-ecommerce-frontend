@@ -9,7 +9,6 @@ import {
   MapPin,
   ShoppingBag,
 } from "lucide-react";
-
 export function Footer() {
   return (
     <footer className="bg-card border-t">

@@ -9,7 +9,12 @@ import { Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
-export function RegisterForm() {
+interface RegisterFormProps {
+  /** When true, render only the form (no card wrapper) for embedding in custom layouts */
+  embedded?: boolean;
+}
+
+export function RegisterForm({ embedded }: RegisterFormProps) {
   const [formData, setFormData] = useState({
     email: "",
     phonenumber: "",
@@ -95,13 +100,8 @@ export function RegisterForm() {
     }
   };
 
-  return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Create Account</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+  const formContent = (
+    <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="first_name">First Name</Label>
             <Input
@@ -251,6 +251,19 @@ export function RegisterForm() {
             </p>
           </div>
         </form>
+  );
+
+  if (embedded) {
+    return formContent;
+  }
+
+  return (
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Create Account</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {formContent}
       </CardContent>
     </Card>
   );

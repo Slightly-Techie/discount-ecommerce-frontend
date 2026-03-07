@@ -15,11 +15,15 @@ import {
   useDeleteProduct,
 } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
-import { Product } from "@/types";
+import { Product, ProductFilters } from "@/types";
 
-export default function ProductManager() {
+interface ProductManagerProps {
+  filters?: ProductFilters;
+}
+
+export default function ProductManager({ filters }: ProductManagerProps) {
   const { toast } = useToast();
-  const { data: productsResponse } = useProducts();
+  const { data: productsResponse } = useProducts(filters);
   const products = productsResponse?.results || [];
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();

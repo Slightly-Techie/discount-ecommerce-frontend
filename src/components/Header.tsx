@@ -11,6 +11,7 @@ import {
   LogOut,
   UserCircle,
   List,
+  Store,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsAuthenticated, useLogout } from "@/hooks/useAuth";
@@ -23,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCartStore } from "@/store/cartStore";
+import { useVendorMe } from "@/hooks/useVendors";
 
 interface HeaderProps {
   favoritesCount?: number;
@@ -34,6 +36,7 @@ export function Header({ favoritesCount = 0, onMenuToggle }: HeaderProps) {
   const logoutMutation = useLogout();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const { data: vendor } = useVendorMe(isAuthenticated);
 
   // Subscribe to cart changes and derive count
   const cartItemsCount = useCartStore((state) =>
@@ -180,6 +183,12 @@ export function Header({ favoritesCount = 0, onMenuToggle }: HeaderProps) {
                       <List className="mr-2 h-4 w-4" />
                       <span>Orders</span>
                     </DropdownMenuItem>
+                    {vendor && (
+                      <DropdownMenuItem onClick={() => navigate("/vendor")}>
+                        <Store className="mr-2 h-4 w-4" />
+                        <span>Vendor Dashboard</span>
+                      </DropdownMenuItem>
+                    )}
                     {user?.role === "admin" && (
                       <DropdownMenuItem onClick={() => navigate("/admin")}>
                         <Settings className="mr-2 h-4 w-4" />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, Layers, Users, LogOut, Upload } from "lucide-react";
+import { Package, Layers, Users, LogOut, Upload, Store } from "lucide-react";
 import { Layout } from "@/components/Layout";
 import ProductManager from "@/components/ProductManager";
 import CategoryManager from "@/components/CategoryManager";
@@ -9,6 +9,7 @@ import { BulkUploadCategories } from "@/components/BulkUploadCategories";
 
 import { useIsAuthenticated, useLogout } from "@/hooks/useAuth";
 import UserManager from "@/components/UserManager";
+import { VendorManager } from "@/components/VendorManager";
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState("products");
@@ -36,6 +37,7 @@ export default function Admin() {
     { key: "bulk-upload-categories", label: "Bulk Upload Categories", icon: Upload },
     { key: "categories", label: "Categories", icon: Layers },
     { key: "users", label: "Users", icon: Users },
+    { key: "vendors", label: "Vendors", icon: Store },
   ];
 
   // If not authenticated or wrong role, show nothing while redirecting
@@ -84,6 +86,7 @@ export default function Admin() {
           {activeTab === "bulk-upload-categories" && <BulkUploadCategories />}
           {activeTab === "categories" && <CategoryManager />}
           {activeTab === "users" && <UserManager />}
+          {activeTab === "vendors" && <VendorManager />}
         </div>
       </main>
     </div>

@@ -21,7 +21,10 @@ import {
   Category,
   CartItemResponse,
   User,
-  UpdateUserData
+  UpdateUserData,
+  Vendor,
+  VendorSignupData,
+  VendorUpdatePayload
 } from '@/types';
 
 // Test API connectivity
@@ -226,6 +229,53 @@ export const authApi = {
   getCurrentUser: async (): Promise<any> => {
     const response = await api.get('/users/me/');
     return response.data;
+  },
+};
+
+// Vendors API
+export const vendorsApi = {
+  signup: async (data: VendorSignupData): Promise<any> => {
+    const response = await api.post('/vendors/signup/', data);
+    return response.data;
+  },
+  getVendors: async (): Promise<PaginatedResponse<Vendor>> => {
+    const response = await api.get('/vendors/');
+    return response.data;
+  },
+  getVendorMe: async (): Promise<Vendor> => {
+    const response = await api.get('/vendors/me/');
+    return response.data;
+  },
+  updateVendorMe: async (data: Partial<VendorUpdatePayload>): Promise<Vendor> => {
+    // Some backends expect multipart/form-data for profile updates
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value as any);
+      }
+    });
+
+    const response = await api.patch('/vendors/me/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+  getVendor: async (id: string): Promise<Vendor> => {
+    const response = await api.get(`/vendors/${id}/`);
+    return response.data;
+  },
+  updateVendor: async (id: string, data: Partial<VendorUpdatePayload>): Promise<Vendor> => {
+    const response = await api.patch(`/vendors/${id}/`, data);
+    return response.data;
+  },
+  approveVendor: async (id: string): Promise<void> => {
+    await api.patch(`/vendors/${id}/approve/`);
+  },
+  rejectVendor: async (id: string): Promise<void> => {
+    await api.patch(`/vendors/${id}/reject/`);
+  },
+  suspendVendor: async (id: string): Promise<void> => {
+    await api.patch(`/vendors/${id}/suspend/`);
   },
 };
 
