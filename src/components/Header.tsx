@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsAuthenticated, useLogout } from "@/hooks/useAuth";
+import { canAccessAdminPortal } from "@/lib/roles";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -189,7 +190,7 @@ export function Header({ favoritesCount = 0, onMenuToggle }: HeaderProps) {
                         <span>Vendor Dashboard</span>
                       </DropdownMenuItem>
                     )}
-                    {user?.role === "admin" && (
+                    {canAccessAdminPortal(user) && (
                       <DropdownMenuItem onClick={() => navigate("/admin")}>
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Admin Dashboard</span>

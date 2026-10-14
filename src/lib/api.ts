@@ -24,7 +24,22 @@ import {
   UpdateUserData,
   Vendor,
   VendorSignupData,
-  VendorUpdatePayload
+  VendorUpdatePayload,
+  AdminVendor,
+  AdminOrder,
+  AdminStats,
+  AppNotification,
+  Coupon,
+  Country,
+  ListParams,
+  OrderReview,
+  OrderStatus,
+  ProductReview,
+  ShippingMethod,
+  ShippingZone,
+  Tag,
+  TaxRate,
+  TaxZone,
 } from '@/types';
 
 // Test API connectivity
@@ -238,8 +253,8 @@ export const vendorsApi = {
     const response = await api.post('/vendors/signup/', data);
     return response.data;
   },
-  getVendors: async (): Promise<PaginatedResponse<Vendor>> => {
-    const response = await api.get('/vendors/');
+  getVendors: async (params?: ListParams): Promise<PaginatedResponse<Vendor>> => {
+    const response = await api.get('/vendors/', { params });
     return response.data;
   },
   getVendorMe: async (): Promise<Vendor> => {
@@ -271,8 +286,8 @@ export const vendorsApi = {
   approveVendor: async (id: string): Promise<void> => {
     await api.patch(`/vendors/${id}/approve/`);
   },
-  rejectVendor: async (id: string): Promise<void> => {
-    await api.patch(`/vendors/${id}/reject/`);
+  rejectVendor: async (id: string, reason?: string): Promise<void> => {
+    await api.patch(`/vendors/${id}/reject/`, { reason: reason ?? '' });
   },
   suspendVendor: async (id: string): Promise<void> => {
     await api.patch(`/vendors/${id}/suspend/`);
@@ -395,6 +410,114 @@ export const userApi = {
   deleteAddress: async (id: string): Promise<void> => {
     await api.delete(`/users/addresses/${id}/`);
   },
+};
+
+// Notifications API (in-app notifications for the current user)
+export const notificationsApi = {
+  list: async (params?: ListParams): Promise<PaginatedResponse<AppNotification>> => {
+    const response = await api.get('/notifications/', { params });
+    return response.data;
+  },
+  unreadCount: async (): Promise<number> => {
+    const response = await api.get('/notifications/unread-count/');
+    return response.data.unread;
+  },
+  markRead: async (id: string): Promise<AppNotification> => {
+    const response = await api.patch(`/notifications/${id}/read/`);
+    return response.data;
+  },
+  markAllRead: async (): Promise<void> => {
+    await api.post('/notifications/mark-all-read/');
+  },
+};
+
+// Generic CRUD helper for admin resources exposed as DRF viewsets
+const crud = <T, Id extends string | number = string | number>(base: string) => ({
+  list: async (params?: ListParams): Promise<PaginatedResponse<T>> => {
+    const response = await api.get(`${base}/`, { params });
+    return response.data;
+  },
+  create: async (data: Partial<T>): Promise<T> => {
+    const response = await api.post(`${base}/`, data);
+    return response.data;
+  },
+  update: async (id: Id, data: Partial<T>): Promise<T> => {
+    const response = await api.patch(`${base}/${id}/`, data);
+    return response.data;
+  },
+  remove: async (id: Id): Promise<void> => {
+    await api.delete(`${base}/${id}/`);
+  },
+});
+
+// Admin portal API (platform admins / managers)
+export const adminApi = {
+  getStats: async (): Promise<AdminStats> => {
+    const response = await api.get('/orders/admin/stats/');
+    return response.data;
+  },
+
+  // Vendors
+  getVendors: async (params?: ListParams): Promise<PaginatedResponse<AdminVendor>> => {
+    const response = await api.get('/vendors/', { params });
+    return response.data;
+  },
+  getVendor: async (id: string): Promise<AdminVendor> => {
+    const response = await api.get(`/vendors/${id}/`);
+    return response.data;
+  },
+
+  // Users
+  getUsers: async (params?: ListParams): Promise<PaginatedResponse<User>> => {
+    const response = await api.get('/users/admin/users/', { params });
+    return response.data;
+  },
+  updateUser: async (id: string, data: Partial<User>): Promise<User> => {
+    const response = await api.patch(`/users/admin/users/${id}/`, data);
+    return response.data;
+  },
+  deactivateUser: async (id: string): Promise<void> => {
+    await api.post(`/users/admin/users/${id}/deactivate/`);
+  },
+
+  // Orders
+  getOrders: async (params?: ListParams): Promise<PaginatedResponse<AdminOrder>> => {
+    const response = await api.get('/orders/', { params });
+    return response.data;
+  },
+  updateOrder: async (
+    id: string,
+    data: { status?: OrderStatus; tracking_number?: string; admin_note?: string }
+  ): Promise<{ detail: string }> => {
+    const response = await api.patch(`/orders/${id}/status/`, data);
+    return response.data;
+  },
+
+  // Coupons, shipping & tax
+  coupons: crud<Coupon, string>('/orders/admin/coupons'),
+  countries: crud<Country, number>('/orders/admin/countries'),
+  shippingZones: crud<ShippingZone, number>('/orders/admin/shipping-zones'),
+  shippingMethods: crud<ShippingMethod, number>('/orders/admin/shipping-methods'),
+  taxZones: crud<TaxZone, number>('/orders/admin/tax-zones'),
+  taxRates: crud<TaxRate, number>('/orders/admin/tax-rates'),
+
+  // Reviews
+  getProductReviews: async (params?: ListParams): Promise<PaginatedResponse<ProductReview>> => {
+    const response = await api.get('/products/reviews/', { params });
+    return response.data;
+  },
+  moderateProductReview: async (id: string, is_approved: boolean): Promise<ProductReview> => {
+    const response = await api.patch(`/products/reviews/${id}/moderate/`, { is_approved });
+    return response.data;
+  },
+  deleteProductReview: async (id: string): Promise<void> => {
+    await api.delete(`/products/reviews/${id}/`);
+  },
+  orderReviews: crud<OrderReview, string>('/orders/admin/reviews'),
+
+  // Categories & tags
+  categories: crud<Category, string>('/category'),
+  tags: crud<Tag, string>('/category/tags'),
 };
 
 export default api; 

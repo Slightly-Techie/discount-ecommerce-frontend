@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useIsAuthenticated, useLogout } from "@/hooks/useAuth";
+import { canAccessAdminPortal } from "@/lib/roles";
 import { useCartStore } from "@/store/cartStore";
 
 interface MobileSidebarProps {
@@ -174,7 +175,7 @@ export function MobileSidebar({
                     Orders
                   </Button>
 
-                  {user?.role === "admin" && (
+                  {canAccessAdminPortal(user) && (
                     <Button
                       variant="ghost"
                       className="w-full justify-start text-lg h-12"
