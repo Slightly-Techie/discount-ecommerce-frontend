@@ -1,23 +1,47 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useIsAuthenticated } from "@/hooks/useAuth";
+import { authKeys, useIsAuthenticated } from "@/hooks/useAuth";
 import { useVendorMe, useUpdateVendorMe } from "@/hooks/useVendors";
-import { useEffect, useState } from "react";
+import { useMarkAllNotificationsRead, useNotifications } from "@/hooks/useNotifications";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, Store, Info, Package, User as UserIcon, BarChart3 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { AlertTriangle, Store, Info, Package, User as UserIcon, BarChart3, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { VendorProductsPanel } from "@/components/VendorProductsPanel";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { productApi } from "@/lib/api";
 
 export default function VendorDashboard() {
-  const { isAuthenticated, user } = useIsAuthenticated();
-  const { data: vendor, isLoading, error, refetch } = useVendorMe(true);
+  const { isAuthenticated, isLoading: authLoading, user } = useIsAuthenticated();
+  const { data: vendor, isLoading, error, refetch } = useVendorMe(true, true);
   const updateVendor = useUpdateVendorMe();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const { data: notificationsPage } = useNotifications({ page_size: 5 }, isAuthenticated);
+  const markAllRead = useMarkAllNotificationsRead();
+  const notifications = notificationsPage?.results ?? [];
+  const hasUnread = notifications.some((n) => !n.is_read);
+
+  // When an admin approves the account while this page is open, unlock it immediately
+  const previousStatus = useRef<string | undefined>();
+  useEffect(() => {
+    const prev = previousStatus.current;
+    if (prev && prev !== vendor?.status && vendor?.status === "approved") {
+      toast({
+        title: "Your vendor account has been approved!",
+        description: "You now have full access to your vendor dashboard.",
+      });
+      queryClient.invalidateQueries({ queryKey: authKeys.user });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    }
+    previousStatus.current = vendor?.status;
+  }, [vendor?.status, toast, queryClient]);
   const [activeSection, setActiveSection] = useState<"overview" | "products" | "profile">("overview");
 
   const { data: vendorProducts } = useQuery({
@@ -28,10 +52,11 @@ export default function VendorDashboard() {
   });
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // Wait for the current-user request before deciding, so a page refresh doesn't bounce to login
+    if (!authLoading && !isAuthenticated) {
       navigate("/login");
     }
-  }, [isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, navigate]);
 
   const status = vendor?.status;
 
@@ -228,14 +253,49 @@ export default function VendorDashboard() {
                 </div>
 
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Activity</CardTitle>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      Notifications
+                    </CardTitle>
+                    {hasUnread && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={markAllRead.isPending}
+                        onClick={() => markAllRead.mutate()}
+                      >
+                        Mark all read
+                      </Button>
+                    )}
                   </CardHeader>
-                  <CardContent className="text-sm text-muted-foreground">
-                    <p>
-                      As you add and update products, summary metrics and trends can be
-                      surfaced here (e.g. active vs inactive products, featured items, etc.).
-                    </p>
+                  <CardContent className="text-sm">
+                    {notifications.length === 0 ? (
+                      <p className="text-muted-foreground">
+                        {status === "pending"
+                          ? "You'll be notified here as soon as an administrator reviews your application."
+                          : "No notifications yet."}
+                      </p>
+                    ) : (
+                      <ul className="divide-y">
+                        {notifications.map((n) => (
+                          <li key={n.id} className="py-3 flex gap-3">
+                            <span
+                              className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                                n.is_read ? "bg-transparent" : "bg-primary"
+                              }`}
+                            />
+                            <div>
+                              <p className={n.is_read ? "" : "font-semibold"}>{n.title}</p>
+                              <p className="text-muted-foreground">{n.message}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </CardContent>
                 </Card>
               </div>

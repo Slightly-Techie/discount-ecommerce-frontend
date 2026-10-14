@@ -147,6 +147,19 @@ export interface Vendor {
   updated_at: string;
 }
 
+export interface VendorOwner {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phonenumber: string;
+}
+
+// Vendor as seen by platform admins (includes the applicant/owner accounts)
+export interface AdminVendor extends Vendor {
+  owners: VendorOwner[];
+}
+
 export interface VendorUpdatePayload {
   name?: string;
   business_email?: string;
@@ -192,6 +205,9 @@ export interface User {
   is_superuser?: boolean;
   is_deleted?: boolean;
   metadata?: Record<string, any>;
+  vendor?: { id: string; name: string; status: Vendor['status'] } | null;
+  date_joined?: string;
+  last_login?: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -222,4 +238,156 @@ export enum UserRole {
   ADMIN = 'admin',
   CUSTOMER = 'customer',
   MANAGER = 'manager',
-} 
+  VENDOR_ADMIN = 'vendor_admin',
+}
+
+// Notifications
+export type NotificationType =
+  | 'vendor_signup'
+  | 'vendor_approved'
+  | 'vendor_rejected'
+  | 'vendor_suspended';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  vendor: { id: string; name: string; status: Vendor['status'] } | null;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+}
+
+// Admin portal types
+export type OrderStatus = 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+
+export interface AdminOrder {
+  id: string;
+  user: string;
+  user_email: string;
+  vendor: { id: string; name: string; status: Vendor['status'] } | null;
+  address: {
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+  } | null;
+  status: OrderStatus;
+  total: string;
+  discount: string;
+  tax: string;
+  shipping: string;
+  coupon: { code: string } | null;
+  checked_out_at: string;
+  tracking_number: string | null;
+  admin_note?: string | null;
+  items: { id: string; product_name: string; quantity: number; price: string }[];
+  created_at: string;
+}
+
+export interface AdminStats {
+  users: { total: number; active: number };
+  vendors: { total: number; pending: number; approved: number; rejected: number; suspended: number };
+  products: { total: number; active: number };
+  orders: { total: number } & Record<OrderStatus, number>;
+  revenue: string;
+  pending_product_reviews: number;
+  recent_orders: AdminOrder[];
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discount_type: 'fixed' | 'percent';
+  discount_value: string;
+  usage_limit: number | null;
+  usage_limit_per_user: number | null;
+  valid_from: string;
+  valid_to: string;
+  active: boolean;
+  min_order_amount: string;
+  max_discount: string | null;
+  times_used: number;
+}
+
+export interface Country {
+  id: number;
+  code: string;
+  name: string;
+}
+
+export interface ShippingZone {
+  id: number;
+  name: string;
+  country: number;
+  country_name: string;
+  is_remote: boolean;
+}
+
+export interface ShippingMethod {
+  id: number;
+  name: string;
+  zone: number;
+  zone_name: string;
+  base_rate: string;
+  per_kg_rate: string;
+  free_over: string | null;
+  active: boolean;
+}
+
+export interface TaxZone {
+  id: number;
+  name: string;
+  country: number;
+  country_name: string;
+  active: boolean;
+}
+
+export interface TaxRate {
+  id: number;
+  zone: number;
+  zone_name: string;
+  rate: string;
+  start_date: string | null;
+  end_date: string | null;
+  active: boolean;
+}
+
+export interface ProductReview {
+  id: string;
+  user: string;
+  user_email: string;
+  product_name: string;
+  rating: number;
+  review: string | null;
+  is_approved: boolean;
+  created_at: string;
+}
+
+export interface OrderReview {
+  id: string;
+  order: string;
+  user: string;
+  user_email: string;
+  rating: number;
+  review: string | null;
+  created_at: string;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+}
+
+export interface ListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  ordering?: string;
+  [key: string]: string | number | boolean | undefined;
+}
