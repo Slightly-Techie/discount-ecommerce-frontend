@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { AlertCircle, ImageOff, MapPin, XCircle } from "lucide-react";
@@ -17,7 +18,6 @@ import { paymentsApi } from "@/lib/api";
 import { productImage } from "@/lib/deal";
 import { orderBadge, orderDate, orderNumber, orderSteps } from "@/lib/orders";
 import { formatGHS } from "@/lib/price";
-import { useOrdersStore } from "@/store/ordersStore";
 import type { OrderPayment } from "@/types/payments";
 import type { Product } from "@/types/product";
 
@@ -52,11 +52,24 @@ function OrderDetailsContent() {
     data?: OrderDetail;
     isLoading: boolean;
     error: unknown;
-    refetch?: () => void;
+    refetch?: () => Promise<unknown> | void;
   };
   const { user } = useIsAuthenticated();
-  const updateOrder = useOrdersStore((s) => s.updateOrder);
-  const { data: accounts = [] } = useQuery({ queryKey: ["payments", "accounts"], queryFn: paymentsApi.listAccounts });
+  const isPending = data?.status === "pending";
+  const awaitingReview = isPending && data?.payment?.status === "submitted";
+  const accountsQuery = useQuery({
+    queryKey: ["payments", "accounts"],
+    queryFn: paymentsApi.listAccounts,
+    enabled: isPending,
+  });
+  const accounts = accountsQuery.data ?? [];
+
+  // While under review, pick up the admin's decision without a manual reload.
+  useEffect(() => {
+    if (!awaitingReview || !refetch) return;
+    const id = window.setInterval(() => void refetch(), 30000);
+    return () => window.clearInterval(id);
+  }, [awaitingReview, refetch]);
   const title = data ? `Order #${orderNumber(data.id)}` : "Order";
 
   if (isLoading && !data) {
@@ -143,7 +156,14 @@ function OrderDetailsContent() {
               <>
                 {data.payment?.status === "rejected" && (
                   <p role="alert" className="text-[15px] font-medium text-destructive">
-                    We couldn’t confirm your payment: {data.payment.rejection_reason}
+                    {data.payment.rejection_reason
+                      ? `We couldn’t confirm your payment: ${data.payment.rejection_reason}`
+                      : "We couldn’t confirm your payment."}
+                  </p>
+                )}
+                {accountsQuery.isError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    We couldn’t load the payment accounts. Check your connection and refresh.
                   </p>
                 )}
                 <PaymentAccountsList accounts={accounts} amount={data.total} />
@@ -151,11 +171,7 @@ function OrderDetailsContent() {
                   accounts={accounts}
                   target={data.checkout_group ? { checkoutGroup: data.checkout_group } : { orderIds: [data.id] }}
                   defaultSenderName={[user?.first_name, user?.last_name].filter(Boolean).join(" ")}
-                  onSubmitted={() => {
-                    // The store serves cached orders, so refetch() would keep the old payment state.
-                    updateOrder(data.id, { payment: { status: "submitted", rejection_reason: "" } } as never);
-                    refetch?.();
-                  }}
+                  onSubmitted={() => void refetch?.()}
                 />
               </>
             )}
