@@ -10,6 +10,7 @@ const TestHome = lazy(() => import("./pages/TestHome"));
 const Products = lazy(() => import("./pages/Products"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
 const Favorites = lazy(() => import("./pages/Favorites"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Login = lazy(() => import("./pages/Login"));
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/products" element={<Products />} />
           <Route path="/products/:id" element={<ProductDetail />} />
           <Route path="/cart" element={<Cart />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/login" element={<Login />} />
