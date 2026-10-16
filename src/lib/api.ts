@@ -344,6 +344,7 @@ export const paymentsApi = {
   submit: async (form: FormData): Promise<PaymentSubmission> => {
     const response = await api.post('/payments/submissions/', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
     });
     return response.data;
   },
