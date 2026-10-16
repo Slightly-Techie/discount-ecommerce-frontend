@@ -104,3 +104,22 @@ export function retailerName(p: DisplayFields): string {
   if (platform) return platform;
   return p.source === 'internal' ? 'Vendor deal' : 'GrottoMore';
 }
+
+/** "Sun 18 Oct" in Accra time. */
+export function shortDate(value: string): string {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: ACCRA, weekday: 'short', day: 'numeric', month: 'short' })
+    .format(Date.parse(value))
+    .replace(',', '');
+}
+
+/**
+ * Detail-page end line for a live discount: "Sun 18 Oct · in 3 days", "today", or
+ * "tomorrow". Null when the discount is not live or has no end date.
+ */
+export function endDetail(p: DealFields, now: Date = new Date()): string | null {
+  if (!isDiscountLive(p, now) || !p.discount_end) return null;
+  const end = Date.parse(p.discount_end);
+  const days = Math.round((Date.parse(accraDayKey(end)) - Date.parse(accraDayKey(now.getTime()))) / DAY_MS);
+  const when = days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`;
+  return `${shortDate(p.discount_end)} · ${when}`;
+}

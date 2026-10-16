@@ -91,8 +91,8 @@ export const productApi = {
 
   // Get single product
   getProduct: async (id: string): Promise<Product> => {
-    const response = await api.get(`/products/${id}`);
-    return response.data.data;
+    const response = await api.get(`/products/${id}/`);
+    return response.data;
   },
 
   // Create product (Admin only)

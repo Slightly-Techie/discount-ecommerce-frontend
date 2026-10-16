@@ -28,7 +28,9 @@ export interface Product {
   is_available: boolean;
   is_featured: boolean;
   stock: number;
-  related_products?: string[];
+  /** Full product objects on the detail endpoint; IDs in admin forms. */
+  related_products?: (Product | string)[];
+  reviews?: { rating: number; is_approved?: boolean }[];
   brand?: string;
   rating?: number;
   createdAt?: Date;
