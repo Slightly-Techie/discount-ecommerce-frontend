@@ -2,140 +2,103 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* GrottoMore design system v1 (docs/design). Colours are HSL channels so Tailwind
+   opacity modifiers work; the hex in each comment is the design's source value. */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 100%;               /* #FFFFFF */
+    --foreground: 0 0% 6.7%;               /* #111111 */
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 0 0% 6.7%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 6.7%;
 
-    /* Primary: Modern teal for eCommerce */
-    --primary: 176 76% 45%;
+    --muted: 180 5.9% 96.7%;               /* #F6F7F7 page bands, footer */
+    --muted-foreground: 168 6.3% 31%;      /* #4A5452 secondary text */
+    --secondary: 180 7.7% 94.9%;           /* #F1F3F3 image wells */
+    --secondary-foreground: 0 0% 6.7%;
+    --subtle-foreground: 169 5.5% 39%;     /* #5E6967 struck "was" price, captions */
+    --skeleton: 165 8.7% 91%;              /* #E6EAE9 */
+
+    --border: 165 7.1% 89%;                /* #E1E5E4 */
+    --input: 169 4.3% 50%;                 /* #7A8583 field borders (3:1) */
+
+    --primary: 176 76.2% 28%;              /* #117E76 deep teal, 4.94:1 */
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 176 76% 40%;
+    --primary-hover: 175 78.2% 23.3%;      /* #0D6A63 */
+    --primary-strong: 176 79.2% 20.8%;     /* #0B5F59 */
+    --accent: 172 45.5% 93.5%;             /* #E7F6F4 teal tint */
+    --accent-foreground: 176 79.2% 20.8%;  /* #0B5F59 */
+    --ring: 176 76.2% 28%;
+    --brand: 176 75.7% 45.1%;              /* #1CCABE fills only, never text */
 
-    /* Secondary: Warm gray */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 9% 46%;
+    --deal: 24 95% 52.9%;                  /* #F97015 badge + one commerce CTA */
+    --deal-foreground: 0 0% 6.7%;          /* #111 on orange, 6.6:1 */
+    --deal-hover: 24 90.9% 47.6%;          /* #E8620B */
+    --deal-text: 24 95.1% 40%;             /* #C75305 orange text on white */
+    --deal-subtle: 25 100% 95.3%;          /* #FFF1E7 */
+    --deal-strong: 24 94.9% 31%;           /* #9A3F04 */
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --save: 142 71.8% 29.2%;               /* #15803D savings green, 5.0:1 */
+    --save-subtle: 140 40% 94.1%;          /* #EAF6EE */
 
-    /* Accent: Orange for CTAs and highlights */
-    --accent: 24 95% 53%;
-    --accent-foreground: 0 0% 100%;
-    --accent-hover: 24 95% 48%;
+    --destructive: 4 76.5% 40%;            /* #B42318 */
+    --destructive-foreground: 0 0% 100%;
+    --destructive-subtle: 6 82.6% 95.5%;   /* #FDECEA */
 
-    /* Success: Green for savings/discounts */
-    --success: 142 76% 36%;
+    /* Legacy names still used by admin/vendor screens */
+    --success: 142 71.8% 29.2%;
     --success-foreground: 0 0% 100%;
-    --success-light: 142 50% 95%;
-
-    /* Warning: Amber for limited offers */
-    --warning: 43 96% 56%;
+    --success-light: 140 40% 94.1%;
+    --warning: 24 95.1% 40%;
     --warning-foreground: 0 0% 100%;
-    --warning-light: 43 100% 96%;
+    --warning-light: 25 100% 95.3%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 2px rgb(17 17 17 / 0.08);
+    --shadow-md: 0 4px 12px rgb(17 17 17 / 0.10);
+    --shadow-lg: 0 -4px 16px rgb(17 17 17 / 0.12);
+    --duration-fast: 150ms;
+    --duration-base: 200ms;
+    --duration-slow: 250ms;
+    --ease-standard: cubic-bezier(.2, 0, 0, 1);
+    --ease-exit: cubic-bezier(.4, 0, 1, 1);
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 176 76% 45%;
-
-    /* Gradients for eCommerce */
-    --gradient-primary: linear-gradient(135deg, hsl(176 76% 45%), hsl(176 76% 35%));
-    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 26%));
-    --gradient-accent: linear-gradient(135deg, hsl(24 95% 53%), hsl(24 95% 43%));
-    --gradient-hero: linear-gradient(135deg, hsl(176 76% 45%) 0%, hsl(24 95% 53%) 100%);
-    
-    /* Shadows */
-    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-discount: 0 0 0 1px hsl(142 76% 36% / 0.1), 0 2px 4px hsl(142 76% 36% / 0.1);
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 180 5.9% 96.7%;
+    --sidebar-foreground: 0 0% 6.7%;
+    --sidebar-primary: 176 76.2% 28%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 172 45.5% 93.5%;
+    --sidebar-accent-foreground: 176 79.2% 20.8%;
+    --sidebar-border: 165 7.1% 89%;
+    --sidebar-ring: 176 76.2% 28%;
   }
 
+  /* Proposed dark theme; no toggle ships in this pass. */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 176 76% 50%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --primary-hover: 176 76% 55%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 24 95% 58%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --accent-hover: 24 95% 63%;
-
-    --success: 142 76% 41%;
-    --success-foreground: 0 0% 100%;
-    --success-light: 142 50% 8%;
-
-    --warning: 43 96% 61%;
-    --warning-foreground: 222.2 47.4% 11.2%;
-    --warning-light: 43 100% 8%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 176 76% 50%;
-
-    --gradient-primary: linear-gradient(135deg, hsl(176 76% 50%), hsl(176 76% 40%));
-    --gradient-success: linear-gradient(135deg, hsl(142 76% 41%), hsl(142 76% 31%));
-    --gradient-accent: linear-gradient(135deg, hsl(24 95% 58%), hsl(24 95% 48%));
-    --gradient-hero: linear-gradient(135deg, hsl(176 76% 50%) 0%, hsl(24 95% 58%) 100%);
-    
-    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
-    --shadow-card-hover: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-    --shadow-discount: 0 0 0 1px hsl(142 76% 41% / 0.3), 0 2px 4px hsl(142 76% 41% / 0.3);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 168 15.2% 6.5%;
+    --foreground: 160 8.6% 93.1%;
+    --card: 168 15.2% 6.5%;
+    --card-foreground: 160 8.6% 93.1%;
+    --popover: 168 15.2% 6.5%;
+    --popover-foreground: 160 8.6% 93.1%;
+    --muted: 171 14.3% 9.6%;
+    --muted-foreground: 169 6.8% 68.4%;
+    --secondary: 173 12.5% 12.5%;
+    --secondary-foreground: 160 8.6% 93.1%;
+    --border: 168 10.6% 18.4%;
+    --input: 170 5.3% 44.3%;
+    --primary: 176 75.7% 45.1%;
+    --primary-foreground: 168 15.2% 6.5%;
+    --ring: 175 67.5% 62.5%;
+    --deal-text: 25 100% 66.1%;
+    --save: 142 69.2% 58%;
+    --success: 142 69.2% 58%;
+    --destructive: 4 92.5% 68.8%;
   }
 }
 
@@ -144,13 +107,34 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    scroll-padding-top: 72px;
+    scroll-padding-bottom: 88px;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 }
 
 @layer utilities {
-  /* Hexagon styles */
+  .tabular-prices {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Used by /test-home only */
   .hexagon-container {
     position: relative;
     width: 300px;
@@ -190,7 +174,6 @@ All colors MUST be HSL.
     }
   }
 
-  /* Animate brand tiles */
   .hexagon-inner button {
     animation: fadeInUp 0.6s ease-out forwards;
     opacity: 0;
@@ -202,5 +185,13 @@ All colors MUST be HSL.
       opacity: 1;
       transform: translateY(0);
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
   }
 }
