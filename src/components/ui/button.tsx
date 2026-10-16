@@ -4,29 +4,35 @@ import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+// Design system v1: orange `deal` is the single commerce action per screen,
+// teal `default` handles everything else. 48px default height; `sm` keeps a
+// 48px hit area through an invisible ::after inset.
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-[15px] font-semibold transition-colors duration-fast ease-standard focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background disabled:pointer-events-none disabled:bg-skeleton disabled:text-subtle disabled:border-transparent [&_svg]:pointer-events-none [&_svg]:size-[18px] [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary-hover hover:scale-105 active:scale-95",
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover active:bg-primary-strong",
+        deal: "bg-deal text-deal-foreground hover:bg-deal-hover active:bg-[#D85A08]",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground hover:bg-[#9A1E14] active:bg-[#821A11] focus-visible:ring-destructive",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-primary bg-background text-primary hover:bg-accent hover:text-accent-foreground active:bg-[#D3EFEB] disabled:bg-background disabled:border-[#C9D0CE]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        accent: "bg-gradient-accent text-accent-foreground hover:opacity-90 hover:scale-105 active:scale-95",
-        success: "bg-gradient-success text-success-foreground hover:opacity-90 hover:scale-105 active:scale-95",
-        discount: "bg-success text-success-foreground hover:bg-success/90 shadow-discount animate-pulse-glow",
+          "bg-secondary text-secondary-foreground hover:bg-skeleton",
+        ghost: "text-primary hover:bg-accent hover:text-accent-foreground active:bg-[#D3EFEB] disabled:bg-transparent",
+        link: "text-primary underline underline-offset-4 hover:text-primary-strong",
+        // Legacy names used by admin and vendor screens
+        accent: "bg-deal text-deal-foreground hover:bg-deal-hover active:bg-[#D85A08]",
+        success: "bg-save text-white hover:bg-save/90",
+        discount: "bg-save text-white hover:bg-save/90",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-12 px-4",
+        sm: "h-10 px-3.5 text-sm after:absolute after:-inset-1 after:content-['']",
+        lg: "h-14 px-6 text-base font-bold",
+        icon: "h-12 w-12",
+        "icon-round": "h-12 w-12 rounded-full",
       },
     },
     defaultVariants: {
