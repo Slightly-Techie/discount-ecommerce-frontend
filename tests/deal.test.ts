@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { formatGHS, toAmount } from '../src/lib/price.ts';
-import { dealPricing, endLabel, isDiscountLive, stockState } from '../src/lib/deal.ts';
+import { dealPricing, endLabel, isDiscountLive, productImage, retailerName, stockState } from '../src/lib/deal.ts';
 
 // Wednesday 2026-10-14 12:00 in Accra (UTC+0 all year)
 const now = new Date('2026-10-14T12:00:00Z');
@@ -55,4 +55,17 @@ test('stockState: 0 out, 1–5 low, more none', () => {
   assert.equal(stockState(5), 'low');
   assert.equal(stockState(6), null);
   assert.equal(stockState(undefined), null);
+});
+
+test('productImage prefers uploaded image, then image_url, then gallery', () => {
+  assert.equal(productImage({ image: '/a.jpg', image_url: 'https://x/b.jpg' }), '/a.jpg');
+  assert.equal(productImage({ image: null, image_url: 'https://x/b.jpg' }), 'https://x/b.jpg');
+  assert.equal(productImage({ images: [{ image: '/g.jpg' }] }), '/g.jpg');
+  assert.equal(productImage({}), null);
+});
+
+test('retailerName uses source_platform, else labels vendor deals', () => {
+  assert.equal(retailerName({ source: 'external', source_platform: 'Shoprite' }), 'Shoprite');
+  assert.equal(retailerName({ source: 'internal', source_platform: '' }), 'Vendor deal');
+  assert.equal(retailerName({}), 'GrottoMore');
 });

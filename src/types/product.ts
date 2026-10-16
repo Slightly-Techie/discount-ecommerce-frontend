@@ -7,6 +7,16 @@ export interface Product {
   discount_start?: string;
   discount_end?: string;
   image_url: string;
+  /** Uploaded image URL; image_url is used for retailer-hosted photos. */
+  image?: string | null;
+  images?: { image: string; alt_text?: string | null }[];
+  slug?: string;
+  /** "internal" for vendor deals listed on GrottoMore, "external" for retailer deals. */
+  source?: 'internal' | 'external';
+  /** Retailer name for external deals, e.g. "Shoprite". */
+  source_platform?: string | null;
+  source_url?: string | null;
+  created_at?: string;
   category: {
     id?: string;
     name: string;

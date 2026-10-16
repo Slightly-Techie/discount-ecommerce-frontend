@@ -14,7 +14,6 @@ import {
   TrendingDown,
   ExternalLink,
 } from "lucide-react";
-import { Footer } from "@/components/Footer";
 import { useProducts } from "@/hooks/useProducts";
 import { useCartStore } from "@/store/cartStore";
 import {
@@ -331,7 +330,6 @@ const TestHome = () => {
       </section>
 
       {/* Footer */}
-      <Footer />
     </Layout>
   );
 };

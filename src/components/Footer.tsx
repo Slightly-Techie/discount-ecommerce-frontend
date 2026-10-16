@@ -1,154 +1,31 @@
 import { Link } from "react-router-dom";
-import { Separator } from "@/components/ui/separator";
-import {
-  Facebook,
-  Twitter,
-  Instagram,
-  Mail,
-  Phone,
-  MapPin,
-  ShoppingBag,
-} from "lucide-react";
+
+// Support contacts (WhatsApp, phone, hours) and policy pages are not in place yet,
+// so the footer only links to destinations that exist.
 export function Footer() {
   return (
-    <footer className="bg-card border-t">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Company Info */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <img
-                src="/icons/Main Logo.svg"
-                alt="GrottoMore Logo"
-                className="h-8 w-8"
-              />
-              <span className="font-bold text-lg">GrottoMore</span>
-            </div>
-            <p className="text-muted-foreground text-sm">
-              Your ultimate destination for discovering amazing discounts and
-              deals from top retailers across Ghana.
-            </p>
-            <div className="flex space-x-4">
-              <a
-                href="#"
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Facebook className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="#"
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Instagram className="h-5 w-5" />
-              </a>
-            </div>
-          </div>
-
-          {/* Quick Links */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">Quick Links</h3>
-            <div className="space-y-2 text-sm">
-              <Link
-                to="/"
-                className="block text-muted-foreground hover:text-primary transition-colors"
-              >
-                Home
-              </Link>
-              <Link
-                to="/products"
-                className="block text-muted-foreground hover:text-primary transition-colors"
-              >
-                All Products
-              </Link>
-              <Link
-                to="/favorites"
-                className="block text-muted-foreground hover:text-primary transition-colors"
-              >
-                My Favorites
-              </Link>
-              <Link
-                to="/cart"
-                className="block text-muted-foreground hover:text-primary transition-colors"
-              >
-                Shopping Cart
-              </Link>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">Categories</h3>
-            <div className="space-y-2 text-sm">
-              <a
-                href="#"
-                className="block text-muted-foreground hover:text-primary transition-colors"
-              >
-                Electronics
-              </a>
-              <a
-                href="#"
-                className="block text-muted-foreground hover:text-primary transition-colors"
-              >
-                Home & Garden
-              </a>
-              <a
-                href="#"
-                className="block text-muted-foreground hover:text-primary transition-colors"
-              >
-                Food & Beverages
-              </a>
-              <a
-                href="#"
-                className="block text-muted-foreground hover:text-primary transition-colors"
-              >
-                Health & Beauty
-              </a>
-            </div>
-          </div>
-
-          {/* Contact Info */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">Contact Us</h3>
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>123 Commerce Street, Accra, Ghana</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <span>+233 54 855 5849</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <span>hello@grottomore.com</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <Separator className="my-8" />
-
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-          <div>© 2024 GrottoMore. All rights reserved.</div>
-          <div className="flex gap-6">
-            <a href="#" className="hover:text-primary transition-colors">
-              Privacy Policy
-            </a>
-            <a href="#" className="hover:text-primary transition-colors">
-              Terms of Service
-            </a>
-            <a href="#" className="hover:text-primary transition-colors">
-              Support
-            </a>
-          </div>
-        </div>
+    <footer className="border-t bg-muted">
+      <div className="container grid gap-8 py-10 sm:grid-cols-3">
+        <nav aria-label="Shop" className="flex flex-col gap-2.5 text-[15px]">
+          <strong>Shop</strong>
+          <Link to="/products" className="text-primary hover:text-primary-strong">All deals</Link>
+          <Link to="/favorites" className="text-primary hover:text-primary-strong">Saved deals</Link>
+          <Link to="/cart" className="text-primary hover:text-primary-strong">Cart</Link>
+        </nav>
+        <nav aria-label="Help" className="flex flex-col gap-2.5 text-[15px]">
+          <strong>Help</strong>
+          <Link to="/orders" className="text-primary hover:text-primary-strong">Track an order</Link>
+          <Link to="/profile" className="text-primary hover:text-primary-strong">Your account</Link>
+        </nav>
+        <nav aria-label="GrottoMore" className="flex flex-col gap-2.5 text-[15px]">
+          <strong>GrottoMore</strong>
+          <Link to="/register?as=vendor" className="text-primary hover:text-primary-strong">List your deals as a vendor</Link>
+        </nav>
       </div>
+      <p className="container border-t py-4 pb-7 text-[13px] text-muted-foreground">
+        Prices and stock come from retailer and vendor listings and can change before you order. All prices in Ghana
+        cedis. © {new Date().getUTCFullYear()} GrottoMore
+      </p>
     </footer>
   );
 }

@@ -84,3 +84,23 @@ export function stockState(stock: number | null | undefined): StockState {
   if (stock <= 5) return 'low';
   return null;
 }
+
+export interface DisplayFields {
+  image?: string | null;
+  image_url?: string | null;
+  images?: { image: string }[] | null;
+  source?: string | null;
+  source_platform?: string | null;
+}
+
+/** First available photo: uploaded image, retailer image_url, then the gallery. */
+export function productImage(p: DisplayFields): string | null {
+  return p.image || p.image_url || p.images?.[0]?.image || null;
+}
+
+/** Retailer for external deals; vendor deals listed on GrottoMore read "Vendor deal". */
+export function retailerName(p: DisplayFields): string {
+  const platform = p.source_platform?.trim();
+  if (platform) return platform;
+  return p.source === 'internal' ? 'Vendor deal' : 'GrottoMore';
+}
