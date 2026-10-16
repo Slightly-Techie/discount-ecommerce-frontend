@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import {
   AlertCircle,
   Baby,
+  CalendarClock,
   ChevronRight,
+  Coins,
   CookingPot,
   ShoppingBasket,
   Smartphone,
@@ -22,6 +24,66 @@ import { useProducts } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { dealPricing, endLabel } from "@/lib/deal";
 import type { Product } from "@/types/product";
+
+const VALUE_POINTS: { icon: LucideIcon; title: string; text: string }[] = [
+  { icon: Store, title: "Retailer and vendor deals in one place", text: "Big retailers and local sellers, side by side." },
+  { icon: Coins, title: "Every price in GH₵", text: "See what you save up front, before you add to cart." },
+  { icon: CalendarClock, title: "Real end dates", text: "No fake countdowns. A deal shows its true end date." },
+];
+
+// Always shown, so the page has a clear purpose even before deals load or exist.
+function Hero() {
+  return (
+    <section aria-labelledby="hero-heading" className="container">
+      <div className="relative overflow-hidden rounded-xl bg-primary px-5 py-7 text-primary-foreground sm:px-8 sm:py-10 lg:px-12 lg:py-14">
+        <span aria-hidden="true" className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand/30 lg:h-72 lg:w-72" />
+        <span aria-hidden="true" className="absolute -bottom-20 right-24 h-40 w-40 rounded-full bg-brand/20 lg:right-72" />
+        <div className="relative flex max-w-xl flex-col gap-4 lg:max-w-2xl">
+          <h1 id="hero-heading" className="text-[28px] font-extrabold leading-[34px] tracking-[-0.02em] sm:text-4xl sm:leading-[44px] lg:text-5xl lg:leading-[56px]">
+            Discover amazing discounts &amp; deals
+          </h1>
+          <p className="text-base leading-6 text-white lg:text-lg lg:leading-7">
+            Find the best discounted products from retailers and local vendors across Ghana. Save on groceries, electronics
+            and everyday essentials, priced in cedis.
+          </p>
+          <div className="flex flex-col gap-3 pt-1 sm:flex-row">
+            <Button asChild variant="deal" size="lg">
+              <Link to="/products">Shop deals</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="border-white bg-transparent text-white hover:bg-white/10 hover:text-white focus-visible:ring-white focus-visible:ring-offset-primary"
+            >
+              <Link to="/register?as=vendor">List your deals as a vendor</Link>
+            </Button>
+          </div>
+        </div>
+        <img
+          src="/icons/Main Logo.svg"
+          alt=""
+          width={224}
+          height={224}
+          className="absolute right-12 top-1/2 hidden h-56 w-56 -translate-y-1/2 rounded-full bg-white p-6 shadow-md xl:block"
+        />
+      </div>
+      <ul className="mt-4 grid gap-3 sm:grid-cols-3 lg:mt-6 lg:gap-6">
+        {VALUE_POINTS.map(({ icon: Icon, title, text }) => (
+          <li key={title} className="flex items-start gap-3 rounded-lg border p-4">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
+              <Icon className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <div className="flex flex-col gap-0.5">
+              <strong className="text-[15px] leading-5">{title}</strong>
+              <span className="text-sm text-muted-foreground">{text}</span>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 
 const categoryIcon = (name: string): LucideIcon => {
   const n = name.toLowerCase();
@@ -114,8 +176,9 @@ const Index = () => {
 
   return (
     <Layout mobileBar={{ kind: "home" }}>
-      <h1 className="sr-only">GrottoMore deals</h1>
       <div className="flex flex-col gap-6 pb-8 pt-4 lg:gap-12 lg:pb-16 lg:pt-8">
+        <Hero />
+
         {categories && categories.length > 0 && (
           <nav aria-label="Categories" className="container">
             <ul className="-mx-1 flex gap-1 overflow-x-auto scrollbar-none lg:mx-0 lg:grid lg:grid-cols-8 lg:gap-2">
@@ -207,8 +270,13 @@ const Index = () => {
         {!isLoading && !isError && products.length === 0 && (
           <EmptyState
             icon={Tag}
-            title="No deals yet"
-            description="New discounts from retailers and vendors will show up here. Check back soon."
+            title="The first deals are landing soon"
+            description="We’re lining up discounts from retailers and local vendors. Check back soon, or sell on GrottoMore and be one of the first."
+            action={
+              <Button asChild variant="outline">
+                <Link to="/register?as=vendor">Sell on GrottoMore</Link>
+              </Button>
+            }
           />
         )}
 
