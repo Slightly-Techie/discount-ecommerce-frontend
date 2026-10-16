@@ -17,6 +17,7 @@ import {
   Truck,
   Upload,
   Users,
+  Wallet,
   X,
 } from "lucide-react";
 import ProductManager from "@/components/ProductManager";
@@ -29,6 +30,7 @@ import { AdminOverview, adminStatsKey } from "@/components/admin/AdminOverview";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { OrdersAdmin } from "@/components/admin/OrdersAdmin";
 import { CouponsAdmin } from "@/components/admin/CouponsAdmin";
+import { PaymentsAdmin } from "@/components/admin/PaymentsAdmin";
 import { PaymentAccountsAdmin } from "@/components/admin/PaymentAccountsAdmin";
 import { ShippingTaxAdmin } from "@/components/admin/ShippingTaxAdmin";
 import { ReviewsAdmin } from "@/components/admin/ReviewsAdmin";
@@ -49,6 +51,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     items: [
       { key: "vendors", label: "Vendors", icon: Store },
       { key: "orders", label: "Orders", icon: ShoppingCart },
+      { key: "payments", label: "Payments", icon: Wallet },
       { key: "users", label: "Users", icon: Users, adminOnly: true },
     ],
   },
@@ -233,6 +236,7 @@ export default function Admin() {
             {activeTab === "overview" && <AdminOverview onNavigate={setTab} onOpenVendor={openVendor} />}
             {activeTab === "vendors" && <VendorManager focusVendorId={focusVendorId} onFocusHandled={clearFocus} />}
             {activeTab === "orders" && <OrdersAdmin />}
+            {activeTab === "payments" && <PaymentsAdmin />}
             {activeTab === "users" && showUsers && <UserManager />}
             {activeTab === "products" && <ProductManager />}
             {activeTab === "bulk-upload" && <BulkUploadProducts />}
