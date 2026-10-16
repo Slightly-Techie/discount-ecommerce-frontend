@@ -16,6 +16,27 @@ import {
 } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { Product, ProductFilters } from "@/types";
+import type { ProductStatus } from "@/types/product";
+import { adminApi } from "@/lib/api";
+import { slugify } from "@/lib/apiErrors";
+import { formatGHS } from "@/lib/price";
+
+/** Map typed tag names to tag IDs, creating tags that don't exist yet. */
+async function resolveTagIds(input: string): Promise<string[]> {
+  const names = Array.from(new Set(input.split(",").map((t) => t.trim()).filter(Boolean)));
+  if (names.length === 0) return [];
+  const existing = (await adminApi.tags.list({ page_size: 100 })).results || [];
+  const ids: string[] = [];
+  for (const name of names) {
+    const match = existing.find((t) => t.name.toLowerCase() === name.toLowerCase() || t.slug === slugify(name));
+    if (match) ids.push(String(match.id));
+    else ids.push(String((await adminApi.tags.create({ name, slug: slugify(name) })).id));
+  }
+  return ids;
+}
+
+const idsFrom = (items: unknown[] | undefined) =>
+  (items || []).map((i) => (typeof i === "object" && i !== null ? String((i as { id: string }).id) : String(i)));
 
 interface ProductManagerProps {
   filters?: ProductFilters;
@@ -42,12 +63,13 @@ export default function ProductManager({ filters }: ProductManagerProps) {
     image_url: "",
     category: "",
     tags: "",
-    status: "active" as "active" | "inactive",
+    status: "active" as ProductStatus,
     is_available: true,
     is_featured: false,
     stock: "",
     related_products: "",
   });
+  const [saving, setSaving] = useState(false);
 
   const resetForm = () => {
     setFormData({
@@ -70,44 +92,48 @@ export default function ProductManager({ filters }: ProductManagerProps) {
     setEditingProduct(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.price || !formData.category) {
+    // Category is optional in the API, so only name and price are required here.
+    if (!formData.name.trim() || !formData.price) {
       toast({
-        title: "Error",
-        description: "Please fill in all required fields",
+        title: "Add a name and price",
+        description: "Product name and price are required.",
         variant: "destructive",
       });
       return;
     }
 
-    const productData = {
-      ...formData,
-      price: formData.price,
-      discount_price: formData.discount_price || undefined,
-      discount_start: formData.discount_start || undefined,
-      discount_end: formData.discount_end || undefined,
-      image_url:
-        formData.image_url ||
-        "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400",
-      tags: formData.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
-      stock: parseInt(formData.stock) || 0,
-      related_products: formData.related_products
-        .split(",")
-        .map((id) => id.trim())
-        .filter(Boolean),
-    };
+    setSaving(true);
+    try {
+      const productData = {
+        ...formData,
+        price: formData.price,
+        discount_price: formData.discount_price || undefined,
+        discount_start: formData.discount_start || undefined,
+        discount_end: formData.discount_end || undefined,
+        image_url: formData.image_url.trim() || undefined,
+        category: formData.category || undefined,
+        tags: await resolveTagIds(formData.tags),
+        stock: parseInt(formData.stock) || 0,
+        related_products: formData.related_products
+          .split(",")
+          .map((id) => id.trim())
+          .filter(Boolean),
+      };
 
-    if (editingProduct) {
-      updateProductMutation.mutate({
-        id: editingProduct.id,
-        product: productData,
-      });
-    } else {
-      createProductMutation.mutate(productData);
+      if (editingProduct) {
+        await updateProductMutation.mutateAsync({ id: editingProduct.id, product: productData as never });
+      } else {
+        await createProductMutation.mutateAsync(productData as never);
+      }
+      // Only clear the form once the save succeeded; on failure the input is kept.
+      resetForm();
+    } catch {
+      // The mutation hooks show the API's reason in a toast.
+    } finally {
+      setSaving(false);
     }
-
-    resetForm();
   };
 
   const handleEdit = (product: Product) => {
@@ -117,16 +143,19 @@ export default function ProductManager({ filters }: ProductManagerProps) {
       description: product.description,
       price: product.price,
       discount_price: product.discount_price || "",
-      discount_start: product.discount_start || "",
-      discount_end: product.discount_end || "",
-      image_url: product.image_url,
-      category: product.category.name,
-      tags: product.tags.join(", "),
-      status: product.status as "active" | "inactive",
+      // datetime-local inputs need "YYYY-MM-DDTHH:mm"; the API sends UTC ISO strings.
+      discount_start: product.discount_start ? product.discount_start.slice(0, 16) : "",
+      discount_end: product.discount_end ? product.discount_end.slice(0, 16) : "",
+      image_url: product.image_url || "",
+      category: product.category?.id ? String(product.category.id) : "",
+      tags: (product.tags as unknown[])
+        .map((t) => (typeof t === "object" && t !== null ? (t as { name: string }).name : String(t)))
+        .join(", "),
+      status: product.status,
       is_available: product.is_available,
       is_featured: product.is_featured,
       stock: product.stock.toString(),
-      related_products: product.related_products?.join(", ") || "",
+      related_products: idsFrom(product.related_products).join(", "),
     });
     setIsAddingProduct(true);
   };
@@ -137,7 +166,9 @@ export default function ProductManager({ filters }: ProductManagerProps) {
 
   const statusOptions = [
     { value: "active", label: "Active" },
-    { value: "inactive", label: "Inactive" },
+    { value: "out_of_stock", label: "Out of stock" },
+    { value: "draft", label: "Draft (hidden)" },
+    { value: "archived", label: "Archived" },
   ];
 
   return (
@@ -224,10 +255,14 @@ export default function ProductManager({ filters }: ProductManagerProps) {
                       value={formData.image_url}
                       onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
                       placeholder="https://example.com/image.jpg"
+                      inputMode="url"
                     />
+                    <p className="mt-1 text-[13px] text-muted-foreground">
+                      A direct link to the image file (ends in .jpg, .png or .webp), not a search result page.
+                    </p>
                   </div>
                   <div>
-                  <Label htmlFor="category">Category *</Label>
+                  <Label htmlFor="category">Category</Label>
 <Select
   options={categoryMutation?.map(c => ({
     value: c.id,
@@ -244,9 +279,14 @@ export default function ProductManager({ filters }: ProductManagerProps) {
       category: selected?.value || "",
     }))
   }
-  placeholder="Select a category"
+  placeholder={categoryMutation?.length ? "Select a category (optional)" : "No categories yet"}
   isClearable
   />
+  {!categoryMutation?.length && (
+    <p className="mt-1 text-[13px] text-muted-foreground">
+      Optional. Add categories under Categories so shoppers can browse by them.
+    </p>
+  )}
 </div>
 
 
@@ -258,7 +298,7 @@ export default function ProductManager({ filters }: ProductManagerProps) {
     onChange={(selected) =>
       setFormData(prev => ({
         ...prev,
-        status: selected?.value as "active" | "inactive",
+        status: (selected?.value || "active") as ProductStatus,
       }))
     }
     placeholder="Select status"
@@ -320,9 +360,9 @@ export default function ProductManager({ filters }: ProductManagerProps) {
                   </div>
 
                   <div className="flex gap-2">
-                    <Button type="submit" className="flex-1">
+                    <Button type="submit" className="flex-1" disabled={saving}>
                       <Save className="h-4 w-4 mr-2" />
-                      {editingProduct ? "Update" : "Add"} Product
+                      {saving ? "Saving…" : `${editingProduct ? "Update" : "Add"} Product`}
                     </Button>
                     {(isAddingProduct || editingProduct) && (
                       <Button type="button" variant="outline" onClick={resetForm}>
@@ -365,11 +405,11 @@ export default function ProductManager({ filters }: ProductManagerProps) {
                       <Badge variant="outline">{product.status}</Badge>
                       <Badge variant="secondary">{product.category?.name}</Badge>
                       <span className="text-sm font-medium">
-                        ${product.price}
+                        {formatGHS(product.price)}
                       </span>
                       {product.discount_price && (
                         <span className="text-sm text-muted-foreground line-through">
-                          ${product.discount_price}
+                          {formatGHS(product.discount_price)}
                         </span>
                       )}
                     </div>

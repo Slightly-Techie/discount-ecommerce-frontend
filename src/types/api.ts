@@ -1,3 +1,4 @@
+import type { ProductStatus } from "./product";
 import { Product, CartItem } from './product';
 
 // API Response Types
@@ -51,7 +52,7 @@ export interface CreateProductData {
   image_url: string;
   category: string;
   tags: string[];
-  status: 'active' | 'inactive';
+  status: ProductStatus;
   is_available: boolean;
   is_featured: boolean;
   stock: number;

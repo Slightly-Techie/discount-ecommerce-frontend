@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productApi } from '@/lib/api';
 import { Product, ProductFilters, UpdateProductData } from '@/types';
 import { useToast } from './use-toast';
+import { apiErrorMessage } from '@/lib/apiErrors';
 
 // Query keys
 export const productKeys = {
@@ -65,7 +66,7 @@ export const useCreateProduct = () => {
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to create product",
+        description: apiErrorMessage(error, "Failed to create product"),
         variant: "destructive",
       });
     },
@@ -95,7 +96,7 @@ export const useUpdateProduct = () => {
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.response?.data?.message || "Failed to update product",
+        description: apiErrorMessage(error, "Failed to update product"),
         variant: "destructive",
       });
     },
