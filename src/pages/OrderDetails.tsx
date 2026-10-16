@@ -1,74 +1,191 @@
-import { useParams, Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { AlertCircle, ImageOff, MapPin, XCircle } from "lucide-react";
+
 import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useOrder } from "@/hooks/useOrders";
-import { ArrowLeft } from "lucide-react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { OrderStepper } from "@/components/ui/order-stepper";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useOrder } from "@/hooks/useOrders";
+import { productImage } from "@/lib/deal";
+import { orderBadge, orderDate, orderNumber, orderSteps } from "@/lib/orders";
+import { formatGHS } from "@/lib/price";
+import type { Product } from "@/types/product";
+
+interface OrderItem {
+  id?: string;
+  product?: Product | null;
+  product_name?: string;
+  quantity: number;
+  price: string;
+}
+
+interface OrderDetail {
+  id: string;
+  status?: string;
+  total: string;
+  shipping?: string;
+  tax?: string;
+  discount?: string;
+  tracking_number?: string | null;
+  checked_out_at?: string;
+  created_at?: string;
+  vendor?: { name: string } | null;
+  address?: { line1: string; line2?: string | null; city: string; state?: string | null } | null;
+  items?: OrderItem[];
+}
 
 function OrderDetailsContent() {
   const { orderId } = useParams();
-  const { data: order, isLoading, error } = useOrder(orderId);
+  const { data, isLoading, error, refetch } = useOrder(orderId) as unknown as {
+    data?: OrderDetail;
+    isLoading: boolean;
+    error: unknown;
+    refetch?: () => void;
+  };
+  const title = data ? `Order #${orderNumber(data.id)}` : "Order";
 
-  console.log('OrderDetails - orderId:', orderId);
-  console.log('OrderDetails - order data:', order);
-  console.log('OrderDetails - isLoading:', isLoading);
-  console.log('OrderDetails - error:', error);
+  if (isLoading && !data) {
+    return (
+      <Layout mobileBar={{ kind: "title", title, back: "/orders" }}>
+        <div aria-busy="true" className="container flex max-w-3xl flex-col gap-4 py-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-40 w-full rounded-lg" />
+          <Skeleton className="h-32 w-full rounded-lg" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <Layout mobileBar={{ kind: "title", title, back: "/orders" }}>
+        <EmptyState
+          icon={AlertCircle}
+          title="We couldn’t load this order"
+          description="It may still be processing. Check your connection and try again."
+          action={
+            <>
+              <Button onClick={() => (refetch ? refetch() : window.location.reload())}>Try again</Button>
+              <Button variant="outline" asChild>
+                <Link to="/orders">All orders</Link>
+              </Button>
+            </>
+          }
+        />
+      </Layout>
+    );
+  }
+
+  const badge = orderBadge(data.status);
+  const steps = orderSteps(data.status);
+  const items = data.items || [];
+  const subtotal = items.reduce((n, i) => n + Number(i.price || 0) * (i.quantity || 1), 0);
+  const rows: [string, number][] = [
+    ["Items", subtotal],
+    ["Delivery", Number(data.shipping || 0)],
+    ["Tax", Number(data.tax || 0)],
+    ["Coupon discount", -Number(data.discount || 0)],
+  ];
 
   return (
-    <Layout>
-      <main className="container mx-auto px-4 py-8">
-        <Link to="/orders">
-          <Button variant="ghost" className="mb-4"><ArrowLeft className="h-4 w-4 mr-2"/>Back to Orders</Button>
-        </Link>
-
-        {isLoading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Loading order...</p>
+    <Layout mobileBar={{ kind: "title", title, back: "/orders" }}>
+      <div className="container flex max-w-3xl flex-col gap-4 pb-12 pt-4 lg:pt-8">
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold lg:text-[30px] lg:leading-[38px]">Order #{orderNumber(data.id)}</h1>
+            <Badge variant={badge.variant}>{badge.label}</Badge>
           </div>
-        )}
-        {error && (
-          <div className="text-center py-12">
-            <p className="text-destructive">Failed to load order.</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              The order might still be processing or the order ID might be invalid.
+          <p className="text-sm text-muted-foreground">
+            Placed {orderDate(data.checked_out_at || data.created_at)}
+            {data.vendor?.name ? ` · Sold by ${data.vendor.name}` : ""}
+          </p>
+        </div>
+
+        <section aria-label="Progress" className="rounded-lg border p-5">
+          {steps ? (
+            <OrderStepper steps={steps} />
+          ) : (
+            <p className="flex items-center gap-2 text-[15px] font-semibold text-destructive">
+              <XCircle className="h-5 w-5" aria-hidden="true" />
+              This order was cancelled.
             </p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => window.location.reload()}
-            >
-              Try Again
-            </Button>
-          </div>
-        )}
+          )}
+          {data.tracking_number && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Tracking number: <span className="font-semibold text-foreground">{data.tracking_number}</span>
+            </p>
+          )}
+        </section>
 
-        {!isLoading && !error && order && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Order #{order.id?.slice?.(0,8) || order.id}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4 text-sm text-muted-foreground">Status: {order.status || 'Pending'}</div>
-              <div className="space-y-3">
-                {(order.items || []).map((item: any, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between border rounded p-3">
-                    <div>
-                      <div className="font-medium">{item.product?.name || item.name}</div>
-                      <div className="text-sm text-muted-foreground">Qty: {item.quantity}</div>
-                    </div>
-                    <div className="font-medium">${Number(item.total || item.price || 0).toFixed(2)}</div>
+        <section aria-labelledby="items-heading" className="rounded-lg border">
+          <h2 id="items-heading" className="border-b px-5 py-3 text-lg font-bold">
+            Items
+          </h2>
+          <ul className="divide-y">
+            {items.map((item, idx) => {
+              const image = item.product ? productImage(item.product) : null;
+              const name = item.product?.name || item.product_name || "Item";
+              return (
+                <li key={item.id || idx} className="flex items-center gap-3 px-5 py-3">
+                  <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-secondary">
+                    {image ? (
+                      <img src={image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-contain p-1" />
+                    ) : (
+                      <ImageOff className="absolute inset-0 m-auto h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                    )}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    {item.product?.id ? (
+                      <Link to={`/products/${item.product.id}`} className="line-clamp-2 text-[15px] font-medium hover:text-primary">
+                        {name}
+                      </Link>
+                    ) : (
+                      <span className="line-clamp-2 text-[15px] font-medium">{name}</span>
+                    )}
+                    <span className="text-[13px] text-muted-foreground">
+                      {item.quantity} × {formatGHS(item.price)}
+                    </span>
                   </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center justify-end gap-6 text-sm">
-                <div>Total: <span className="font-semibold">${Number(order.total || 0).toFixed(2)}</span></div>
-              </div>
-            </CardContent>
-          </Card>
+                  <span className="text-[15px] font-bold tabular-prices">{formatGHS(Number(item.price) * item.quantity)}</span>
+                </li>
+              );
+            })}
+          </ul>
+          <dl className="flex flex-col gap-1.5 border-t px-5 py-4 text-[15px]">
+            {rows
+              .filter(([label, amount]) => label === "Items" || label === "Delivery" || amount !== 0)
+              .map(([label, amount]) => (
+                <div key={label} className="flex justify-between text-muted-foreground">
+                  <dt>{label}</dt>
+                  <dd className="tabular-prices">{amount < 0 ? `−${formatGHS(-amount)}` : formatGHS(amount)}</dd>
+                </div>
+              ))}
+            <div className="mt-1 flex justify-between border-t pt-2.5 text-lg font-bold">
+              <dt>Total</dt>
+              <dd className="tabular-prices">{formatGHS(data.total)}</dd>
+            </div>
+          </dl>
+        </section>
+
+        {data.address && (
+          <section aria-labelledby="address-heading" className="flex gap-3 rounded-lg border p-5">
+            <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <div className="text-[15px]">
+              <h2 id="address-heading" className="font-bold">
+                Delivery address
+              </h2>
+              <p className="text-muted-foreground">
+                {data.address.line1}
+                {data.address.line2 ? `, ${data.address.line2}` : ""}, {data.address.city}
+                {data.address.state ? `, ${data.address.state}` : ""}
+              </p>
+            </div>
+          </section>
         )}
-      </main>
+      </div>
     </Layout>
   );
 }
@@ -79,4 +196,4 @@ export default function OrderDetails() {
       <OrderDetailsContent />
     </ProtectedRoute>
   );
-} 
+}

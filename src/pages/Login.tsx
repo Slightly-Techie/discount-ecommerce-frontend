@@ -1,28 +1,36 @@
-import { LoginForm } from "@/components/LoginForm";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { Info } from "lucide-react";
+
 import { Layout } from "@/components/Layout";
-import { Footer } from "@/components/Footer";
-import { useLocation } from "react-router-dom";
+import { LoginForm } from "@/components/LoginForm";
+
+// Only same-site paths are allowed as a post-login destination.
+const safePath = (value: string | null | undefined) => (value && value.startsWith("/") && !value.startsWith("//") ? value : null);
 
 export default function Login() {
   const location = useLocation();
-  const from = location.state?.from?.pathname || "/";
+  const [params] = useSearchParams();
+  const from = safePath(params.get("next")) || safePath(location.state?.from?.pathname) || "/";
+  const forCheckout = params.get("reason") === "checkout";
 
   return (
-    <Layout>
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-md mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-            <p className="text-muted-foreground">
-              {from !== "/" ? `Sign in to access ${from}` : "Sign in to your account to continue shopping"}
-            </p>
-          </div>
-          
-          <LoginForm redirectTo={from} />
+    <Layout mobileBar={{ kind: "title", title: "Sign in" }}>
+      <div className="container flex max-w-md flex-col gap-6 pb-12 pt-6 lg:pt-12">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold lg:text-[30px] lg:leading-[38px]">Sign in</h1>
+          <p className="text-[15px] text-muted-foreground">Track orders and keep your saved deals on every device.</p>
         </div>
-      </main>
-
-      <Footer />
+        {forCheckout && (
+          <div className="flex items-start gap-3 rounded-lg bg-accent px-4 py-3.5 text-accent-foreground">
+            <Info className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+            <div>
+              <strong className="text-[15px]">Sign in to place your order</strong>
+              <p className="text-sm">We need your account to confirm delivery. Your cart is kept.</p>
+            </div>
+          </div>
+        )}
+        <LoginForm redirectTo={from} />
+      </div>
     </Layout>
   );
-} 
+}

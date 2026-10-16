@@ -85,13 +85,7 @@ export const useLogin = () => {
       const redirectTo = variables.redirectTo || "/";
       navigate(redirectTo);
     },
-    onError: (error: any) => {
-      toast({
-        title: "Login failed",
-        description: error.response?.data?.message || "Invalid credentials",
-        variant: "destructive",
-      });
-    },
+    // Errors are shown inline by LoginForm.
   });
 };
 

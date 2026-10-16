@@ -12,6 +12,7 @@ import { useCreateAddress } from "@/hooks/useUsers";
 import { orderApi } from "@/lib/api";
 import { COUPON_KEY } from "@/lib/checkout";
 import { dealPricing } from "@/lib/deal";
+import { orderNumber } from "@/lib/orders";
 import { formatGHS } from "@/lib/price";
 import { useCartStore } from "@/store/cartStore";
 import { useOrdersStore } from "@/store/ordersStore";
@@ -41,7 +42,6 @@ interface PlacedOrder {
   vendor?: { name: string } | null;
 }
 
-const orderNumber = (id: string) => id.slice(0, 8).toUpperCase();
 
 // Payment is not integrated yet: Pay on delivery is the only method that can be
 // chosen, and mobile money is shown as coming soon rather than faked.

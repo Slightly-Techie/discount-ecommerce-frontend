@@ -1,94 +1,94 @@
-import { useState, useMemo } from "react";
-import { Layout } from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { useOrders } from "@/hooks/useOrders";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { ChevronRight, Package } from "lucide-react";
+
+import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { Package } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useOrders } from "@/hooks/useOrders";
+import { isActiveOrder, orderBadge, orderDate, orderNumber } from "@/lib/orders";
+import { formatGHS } from "@/lib/price";
+
+interface OrderRow {
+  id: string;
+  status?: string;
+  total?: string;
+  items?: { quantity?: number }[];
+  checked_out_at?: string;
+  created_at?: string;
+}
 
 function OrdersContent() {
-  const { data: orders = [], isLoading, error } = useOrders();
-  const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
-
-  console.log('Orders page - orders data:', orders);
-  console.log('Orders page - orders length:', orders.length);
-  console.log('Orders page - isLoading:', isLoading);
-  console.log('Orders page - error:', error);
-
-  const filtered = useMemo(() => {
-    if (filter === 'all') return orders;
-    if (filter === 'pending') return orders.filter((o: any) => (o.status || '').toLowerCase() !== 'completed');
-    return orders.filter((o: any) => (o.status || '').toLowerCase() === 'completed');
-  }, [orders, filter]);
-
-  console.log('Orders page - filtered orders:', filtered);
-  console.log('Orders page - filtered length:', filtered.length);
-
-  const EmptyState = (
-    <div className="text-center py-16">
-      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-        <Package className="h-8 w-8 text-muted-foreground" />
-      </div>
-      <h2 className="text-2xl font-bold mb-2">No orders yet</h2>
-      <p className="text-muted-foreground mb-6">When you place an order, it will show up here.</p>
-      <Link to="/products">
-        <Button>Start Shopping</Button>
-      </Link>
-    </div>
-  );
+  const { data, isLoading } = useOrders();
+  const orders = useMemo(() => (data || []) as OrderRow[], [data]);
+  const [tab, setTab] = useState<"active" | "past">("active");
+  const shown = orders.filter((o) => (tab === "active" ? isActiveOrder(o.status) : !isActiveOrder(o.status)));
 
   return (
-    <Layout>
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">My Orders</h1>
-          <div className="flex gap-2">
-            <Button variant={filter==='all' ? 'default' : 'outline'} onClick={() => setFilter('all')}>All</Button>
-            <Button variant={filter==='pending' ? 'default' : 'outline'} onClick={() => setFilter('pending')}>Pending</Button>
-            <Button variant={filter==='completed' ? 'default' : 'outline'} onClick={() => setFilter('completed')}>Completed</Button>
-          </div>
-        </div>
+    <Layout mobileBar={{ kind: "title", title: "Orders", back: "/profile" }}>
+      <div className="container max-w-3xl pb-12 pt-4 lg:pt-8">
+        <h1 className="mb-4 hidden text-[30px] font-bold leading-[38px] lg:block">Your orders</h1>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as "active" | "past")} className="mb-4">
+          <TabsList aria-label="Orders">
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="past">Past</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-        {isLoading && (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Loading orders...</p>
-          </div>
-        )}
-
-        {/* Treat missing/none as empty state instead of error UI */}
-        {!isLoading && error && EmptyState}
-
-        {!isLoading && !error && (
-          filtered.length === 0 ? (
-            EmptyState
-          ) : (
-            <div className="grid grid-cols-1 gap-4">
-              {filtered.map((order: any) => (
-                <Card key={order.id}>
-                  <CardHeader className="flex-row items-center justify-between">
-                    <CardTitle>Order #{order.id?.slice?.(0,8) || order.id}</CardTitle>
-                    <Badge variant={ (order.status || '').toLowerCase() === 'completed' ? 'secondary' : 'outline'}>
-                      {order.status || 'Pending'}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Items: {order.items?.length || order.item_count || 0}</p>
-                      <p className="text-sm text-muted-foreground">Total: ${Number(order.total || order.amount || 0).toFixed(2)}</p>
+        {isLoading && orders.length === 0 ? (
+          <ul aria-busy="true" className="flex flex-col gap-3">
+            {[0, 1, 2].map((i) => (
+              <li key={i} className="h-24 rounded-lg bg-skeleton" />
+            ))}
+          </ul>
+        ) : shown.length === 0 ? (
+          <EmptyState
+            icon={Package}
+            title={tab === "active" ? "No active orders" : "No past orders yet"}
+            description={
+              tab === "active"
+                ? "When you place an order, you can track it here."
+                : "Delivered and cancelled orders show up here."
+            }
+            action={
+              <Button asChild>
+                <Link to="/products">Browse deals</Link>
+              </Button>
+            }
+          />
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {shown.map((o) => {
+              const badge = orderBadge(o.status);
+              const count = (o.items || []).reduce((n, i) => n + (i.quantity || 1), 0);
+              return (
+                <li key={o.id}>
+                  <Link
+                    to={`/orders/${o.id}`}
+                    className="flex items-center gap-3 rounded-lg border p-4 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[15px] font-bold">Order #{orderNumber(o.id)}</span>
+                        <Badge variant={badge.variant}>{badge.label}</Badge>
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {orderDate(o.checked_out_at || o.created_at)}
+                        {count > 0 && ` · ${count} ${count === 1 ? "item" : "items"}`}
+                      </span>
+                      <span className="text-base font-bold tabular-prices">{formatGHS(o.total)}</span>
                     </div>
-                    <Link to={`/orders/${order.id}`}>
-                      <Button variant="outline">View Details</Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )
+                    <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         )}
-      </main>
+      </div>
     </Layout>
   );
 }
@@ -99,4 +99,4 @@ export default function Orders() {
       <OrdersContent />
     </ProtectedRoute>
   );
-} 
+}
