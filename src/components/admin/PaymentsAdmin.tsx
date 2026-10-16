@@ -39,20 +39,25 @@ export function PaymentsAdmin() {
     mutationFn: (id: string) => adminApi.paymentSubmissions.confirm(id),
     onSuccess: () => {
       toast({ title: "Payment confirmed", description: "The orders are now marked paid." });
+    },
+    onError: (e) => toast({ title: "Couldn't confirm", description: apiErrorMessage(e), variant: "destructive" }),
+    // On failure too (e.g. already reviewed elsewhere): close and reload so a stale row loses its actions.
+    onSettled: () => {
       setConfirming(null);
       refresh();
     },
-    onError: (e) => toast({ title: "Couldn't confirm", description: apiErrorMessage(e), variant: "destructive" }),
   });
   const reject = useMutation({
     mutationFn: ({ id, why }: { id: string; why: string }) => adminApi.paymentSubmissions.reject(id, why),
     onSuccess: () => {
       toast({ title: "Payment rejected", description: "The shopper has been told why." });
+    },
+    onError: (e) => toast({ title: "Couldn't reject", description: apiErrorMessage(e), variant: "destructive" }),
+    onSettled: () => {
       setRejecting(null);
       setReason("");
       refresh();
     },
-    onError: (e) => toast({ title: "Couldn't reject", description: apiErrorMessage(e), variant: "destructive" }),
   });
 
   const openProof = async (url: string) => {

@@ -18,6 +18,7 @@ import { paymentsApi } from "@/lib/api";
 import { productImage } from "@/lib/deal";
 import { orderBadge, orderDate, orderNumber, orderSteps } from "@/lib/orders";
 import { formatGHS } from "@/lib/price";
+import { useOrdersStore } from "@/store/ordersStore";
 import type { OrderPayment } from "@/types/payments";
 import type { Product } from "@/types/product";
 
@@ -55,6 +56,7 @@ function OrderDetailsContent() {
     refetch?: () => Promise<unknown> | void;
   };
   const { user } = useIsAuthenticated();
+  const updateOrder = useOrdersStore((s) => s.updateOrder);
   const isPending = data?.status === "pending";
   const awaitingReview = isPending && data?.payment?.status === "submitted";
   const accountsQuery = useQuery({
@@ -169,9 +171,14 @@ function OrderDetailsContent() {
                 <PaymentAccountsList accounts={accounts} amount={data.total} />
                 <PaymentProofForm
                   accounts={accounts}
-                  target={data.checkout_group ? { checkoutGroup: data.checkout_group } : { orderIds: [data.id] }}
+                  // Pay this order only: the amount shown is this order's total, not the whole checkout group's
+                  target={{ orderIds: [data.id] }}
                   defaultSenderName={[user?.first_name, user?.last_name].filter(Boolean).join(" ")}
-                  onSubmitted={() => void refetch?.()}
+                  onSubmitted={() => {
+                    // Flip to "under review" at once, even if the refetch fails
+                    updateOrder(data.id, { payment: { status: "submitted", rejection_reason: "" } });
+                    void refetch?.();
+                  }}
                 />
               </>
             )}

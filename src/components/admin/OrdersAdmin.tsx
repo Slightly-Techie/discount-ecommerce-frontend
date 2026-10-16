@@ -11,7 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useIsAuthenticated } from "@/hooks/useAuth";
 import { adminApi } from "@/lib/api";
+import { canMarkOrdersPaid } from "@/lib/roles";
 import type { AdminOrder, OrderStatus } from "@/types";
 import { EmptyRow, Pager, SearchBox, apiErrorMessage, formatMoney, useAdminList } from "./shared";
 
@@ -63,7 +65,7 @@ export function OrdersAdmin() {
           <select
             value={statusFilter}
             onChange={(e) => {
-              setStatusFilter(e.target.value as any);
+              setStatusFilter(e.target.value as "all" | OrderStatus);
               list.setPage(1);
             }}
             className="h-10 rounded-md border border-input bg-background px-3 text-sm"
@@ -132,6 +134,7 @@ export function OrdersAdmin() {
 function OrderDialog({ order, onClose }: { order: AdminOrder | null; onClose: () => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useIsAuthenticated();
   const [status, setStatus] = useState<OrderStatus | "">("");
   const [tracking, setTracking] = useState("");
   const [note, setNote] = useState("");
@@ -159,7 +162,7 @@ function OrderDialog({ order, onClose }: { order: AdminOrder | null; onClose: ()
   });
 
   if (!order) return null;
-  const next = TRANSITIONS[order.status] ?? [];
+  const next = (TRANSITIONS[order.status] ?? []).filter((s) => s !== "paid" || canMarkOrdersPaid(user));
 
   return (
     <Dialog open={!!order} onOpenChange={(open) => !open && onClose()}>

@@ -180,7 +180,18 @@ const Checkout = () => {
           </dl>
           <div className="flex w-full flex-col gap-4 rounded-lg border p-5 text-left">
             <h2 className="text-lg font-bold">Send this amount</h2>
-            <PaymentAccountsList accounts={accounts} amount={total} />
+            {accountsQuery.isError ? (
+              <p role="alert" className="flex items-start gap-2 rounded-md bg-destructive-subtle p-3 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                We couldn’t load the payment accounts. Check your connection and refresh.
+              </p>
+            ) : accountsQuery.isPending ? (
+              <p role="status" className="text-sm text-muted-foreground">
+                Loading payment accounts…
+              </p>
+            ) : (
+              <PaymentAccountsList accounts={accounts} amount={total} />
+            )}
             {proofSent ? (
               <p role="status" className="rounded-md bg-save-subtle p-3 text-sm text-save">
                 Thanks — we’re checking your payment. We’ll notify you when it’s confirmed.
