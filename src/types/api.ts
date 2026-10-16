@@ -35,6 +35,10 @@ export interface ProductFilters {
   limit?: number;
   // Optional: filter products by vendor (vendor ID)
   vendor?: string;
+  /** "internal" (vendor deals) or "external" (retailer deals). */
+  source?: string;
+  /** Exact retailer name, e.g. "Shoprite". */
+  source_platform?: string;
 }
 
 export interface CreateProductData {

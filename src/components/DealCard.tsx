@@ -42,7 +42,7 @@ export function DealCard({ product, priority = false, className }: DealCardProps
 
   return (
     <article className={cn("relative flex flex-col overflow-hidden rounded-lg border bg-card", className)}>
-      <div className="relative flex aspect-square flex-col items-center justify-center gap-1.5 bg-secondary">
+      <div className="relative flex aspect-square flex-col items-center justify-center gap-1.5 overflow-hidden bg-secondary">
         {image ? (
           <img
             src={image}
@@ -52,7 +52,7 @@ export function DealCard({ product, priority = false, className }: DealCardProps
             loading={priority ? "eager" : "lazy"}
             {...(priority ? { fetchpriority: "high" } : {})}
             decoding="async"
-            className={cn("h-full w-full object-contain p-2", isOut && "opacity-[0.45]")}
+            className={cn("absolute inset-0 h-full w-full object-contain p-2", isOut && "opacity-[0.45]")}
           />
         ) : (
           <>
@@ -146,7 +146,7 @@ export function DealCard({ product, priority = false, className }: DealCardProps
           <Store className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate font-medium">{retailerName(product)}</span>
         </div>
-        <div className="mt-1 flex min-h-4 gap-2.5 whitespace-nowrap text-xs font-semibold leading-4 text-deal-text">
+        <div className="mt-1 flex min-h-4 flex-wrap gap-x-2.5 gap-y-0.5 whitespace-nowrap text-xs font-semibold leading-4 text-deal-text">
           {ends && !isOut && (
             <span className="flex items-center gap-1">
               <Clock className="h-[13px] w-[13px]" strokeWidth={2.25} aria-hidden="true" />
