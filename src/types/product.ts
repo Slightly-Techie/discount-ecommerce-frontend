@@ -1,3 +1,6 @@
+/** Backend Product.Status choices. */
+export type ProductStatus = "active" | "out_of_stock" | "draft" | "archived";
+
 export interface Product {
   id: string;
   name: string;
@@ -24,7 +27,7 @@ export interface Product {
     description: string;
   };
   tags: string[];
-  status: 'active' | 'inactive';
+  status: ProductStatus;
   is_available: boolean;
   is_featured: boolean;
   stock: number;

@@ -98,13 +98,13 @@ export const productApi = {
   // Create product (Admin only)
   createProduct: async (product: CreateProductData): Promise<Product> => {
     const response = await api.post('/products/', product);
-    return response.data.data;
+    return response.data;
   },
 
   // Update product (Admin only)
   updateProduct: async (id: string, product: UpdateProductData): Promise<Product> => {
     const response = await api.put(`/products/${id}/`, product);
-    return response.data.data;
+    return response.data;
   },
 
   // Delete product (Admin only)
