@@ -1,17 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router-dom";
 import { AlertCircle, ImageOff, MapPin, XCircle } from "lucide-react";
 
 import { Layout } from "@/components/Layout";
+import { PaymentAccountsList } from "@/components/PaymentAccountsList";
+import { PaymentProofForm } from "@/components/PaymentProofForm";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { OrderStepper } from "@/components/ui/order-stepper";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsAuthenticated } from "@/hooks/useAuth";
 import { useOrder } from "@/hooks/useOrders";
+import { paymentsApi } from "@/lib/api";
 import { productImage } from "@/lib/deal";
 import { orderBadge, orderDate, orderNumber, orderSteps } from "@/lib/orders";
 import { formatGHS } from "@/lib/price";
+import { useOrdersStore } from "@/store/ordersStore";
+import type { OrderPayment } from "@/types/payments";
 import type { Product } from "@/types/product";
 
 interface OrderItem {
@@ -35,6 +42,8 @@ interface OrderDetail {
   vendor?: { name: string } | null;
   address?: { line1: string; line2?: string | null; city: string; state?: string | null } | null;
   items?: OrderItem[];
+  checkout_group?: string | null;
+  payment?: OrderPayment | null;
 }
 
 function OrderDetailsContent() {
@@ -45,6 +54,9 @@ function OrderDetailsContent() {
     error: unknown;
     refetch?: () => void;
   };
+  const { user } = useIsAuthenticated();
+  const updateOrder = useOrdersStore((s) => s.updateOrder);
+  const { data: accounts = [] } = useQuery({ queryKey: ["payments", "accounts"], queryFn: paymentsApi.listAccounts });
   const title = data ? `Order #${orderNumber(data.id)}` : "Order";
 
   if (isLoading && !data) {
@@ -79,7 +91,7 @@ function OrderDetailsContent() {
     );
   }
 
-  const badge = orderBadge(data.status);
+  const badge = orderBadge(data.status, data.payment);
   const steps = orderSteps(data.status);
   const items = data.items || [];
   const subtotal = items.reduce((n, i) => n + Number(i.price || 0) * (i.quantity || 1), 0);
@@ -119,6 +131,36 @@ function OrderDetailsContent() {
             </p>
           )}
         </section>
+
+        {data.status === "pending" && (
+          <section aria-labelledby="payment-heading" className="flex flex-col gap-4 rounded-lg border p-5">
+            <h2 id="payment-heading" className="text-lg font-bold">
+              Payment
+            </h2>
+            {data.payment?.status === "submitted" ? (
+              <p className="text-[15px]">Payment under review. We’ll notify you when it’s confirmed.</p>
+            ) : (
+              <>
+                {data.payment?.status === "rejected" && (
+                  <p role="alert" className="text-[15px] font-medium text-destructive">
+                    We couldn’t confirm your payment: {data.payment.rejection_reason}
+                  </p>
+                )}
+                <PaymentAccountsList accounts={accounts} amount={data.total} />
+                <PaymentProofForm
+                  accounts={accounts}
+                  target={data.checkout_group ? { checkoutGroup: data.checkout_group } : { orderIds: [data.id] }}
+                  defaultSenderName={[user?.first_name, user?.last_name].filter(Boolean).join(" ")}
+                  onSubmitted={() => {
+                    // The store serves cached orders, so refetch() would keep the old payment state.
+                    updateOrder(data.id, { payment: { status: "submitted", rejection_reason: "" } } as never);
+                    refetch?.();
+                  }}
+                />
+              </>
+            )}
+          </section>
+        )}
 
         <section aria-labelledby="items-heading" className="rounded-lg border">
           <h2 id="items-heading" className="border-b px-5 py-3 text-lg font-bold">

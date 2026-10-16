@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOrders } from "@/hooks/useOrders";
 import { isActiveOrder, orderBadge, orderDate, orderNumber } from "@/lib/orders";
 import { formatGHS } from "@/lib/price";
+import type { OrderPayment } from "@/types/payments";
 
 interface OrderRow {
   id: string;
@@ -19,6 +20,7 @@ interface OrderRow {
   items?: { quantity?: number }[];
   checked_out_at?: string;
   created_at?: string;
+  payment?: OrderPayment | null;
 }
 
 function OrdersContent() {
@@ -62,7 +64,7 @@ function OrdersContent() {
         ) : (
           <ul className="flex flex-col gap-3">
             {shown.map((o) => {
-              const badge = orderBadge(o.status);
+              const badge = orderBadge(o.status, o.payment);
               const count = (o.items || []).reduce((n, i) => n + (i.quantity || 1), 0);
               return (
                 <li key={o.id}>
