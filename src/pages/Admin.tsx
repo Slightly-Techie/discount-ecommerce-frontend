@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
   Home,
+  Landmark,
   Layers,
   LogOut,
   Menu,
@@ -28,6 +29,7 @@ import { AdminOverview, adminStatsKey } from "@/components/admin/AdminOverview";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { OrdersAdmin } from "@/components/admin/OrdersAdmin";
 import { CouponsAdmin } from "@/components/admin/CouponsAdmin";
+import { PaymentAccountsAdmin } from "@/components/admin/PaymentAccountsAdmin";
 import { ShippingTaxAdmin } from "@/components/admin/ShippingTaxAdmin";
 import { ReviewsAdmin } from "@/components/admin/ReviewsAdmin";
 import { TagsAdmin } from "@/components/admin/TagsAdmin";
@@ -66,6 +68,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     items: [
       { key: "coupons", label: "Coupons", icon: Ticket },
       { key: "shipping-tax", label: "Shipping & Tax", icon: Truck },
+      { key: "payment-accounts", label: "Payment accounts", icon: Landmark, adminOnly: true },
     ],
   },
 ];
@@ -239,6 +242,7 @@ export default function Admin() {
             {activeTab === "reviews" && <ReviewsAdmin />}
             {activeTab === "coupons" && <CouponsAdmin />}
             {activeTab === "shipping-tax" && <ShippingTaxAdmin />}
+            {activeTab === "payment-accounts" && showUsers && <PaymentAccountsAdmin />}
           </div>
         </main>
       </div>
