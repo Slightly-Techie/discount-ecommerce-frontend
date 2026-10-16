@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
   Home,
+  Landmark,
   Layers,
   LogOut,
   Menu,
@@ -16,6 +17,7 @@ import {
   Truck,
   Upload,
   Users,
+  Wallet,
   X,
 } from "lucide-react";
 import ProductManager from "@/components/ProductManager";
@@ -28,6 +30,8 @@ import { AdminOverview, adminStatsKey } from "@/components/admin/AdminOverview";
 import { NotificationBell } from "@/components/admin/NotificationBell";
 import { OrdersAdmin } from "@/components/admin/OrdersAdmin";
 import { CouponsAdmin } from "@/components/admin/CouponsAdmin";
+import { PaymentsAdmin } from "@/components/admin/PaymentsAdmin";
+import { PaymentAccountsAdmin } from "@/components/admin/PaymentAccountsAdmin";
 import { ShippingTaxAdmin } from "@/components/admin/ShippingTaxAdmin";
 import { ReviewsAdmin } from "@/components/admin/ReviewsAdmin";
 import { TagsAdmin } from "@/components/admin/TagsAdmin";
@@ -47,6 +51,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     items: [
       { key: "vendors", label: "Vendors", icon: Store },
       { key: "orders", label: "Orders", icon: ShoppingCart },
+      { key: "payments", label: "Payments", icon: Wallet },
       { key: "users", label: "Users", icon: Users, adminOnly: true },
     ],
   },
@@ -66,6 +71,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     items: [
       { key: "coupons", label: "Coupons", icon: Ticket },
       { key: "shipping-tax", label: "Shipping & Tax", icon: Truck },
+      { key: "payment-accounts", label: "Payment accounts", icon: Landmark, adminOnly: true },
     ],
   },
 ];
@@ -230,6 +236,7 @@ export default function Admin() {
             {activeTab === "overview" && <AdminOverview onNavigate={setTab} onOpenVendor={openVendor} />}
             {activeTab === "vendors" && <VendorManager focusVendorId={focusVendorId} onFocusHandled={clearFocus} />}
             {activeTab === "orders" && <OrdersAdmin />}
+            {activeTab === "payments" && <PaymentsAdmin />}
             {activeTab === "users" && showUsers && <UserManager />}
             {activeTab === "products" && <ProductManager />}
             {activeTab === "bulk-upload" && <BulkUploadProducts />}
@@ -239,6 +246,7 @@ export default function Admin() {
             {activeTab === "reviews" && <ReviewsAdmin />}
             {activeTab === "coupons" && <CouponsAdmin />}
             {activeTab === "shipping-tax" && <ShippingTaxAdmin />}
+            {activeTab === "payment-accounts" && showUsers && <PaymentAccountsAdmin />}
           </div>
         </main>
       </div>

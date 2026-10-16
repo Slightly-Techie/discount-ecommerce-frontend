@@ -3,11 +3,19 @@ import assert from 'node:assert/strict';
 import { isActiveOrder, orderBadge, orderDate, orderNumber, orderSteps } from '../src/lib/orders.ts';
 
 test('orderBadge maps API statuses to design labels', () => {
-  assert.deepEqual(orderBadge('pending'), { variant: 'placed', label: 'Placed' });
-  assert.deepEqual(orderBadge('paid'), { variant: 'confirmed', label: 'Confirmed' });
+  assert.deepEqual(orderBadge('pending'), { variant: 'placed', label: 'Awaiting payment' });
+  assert.deepEqual(orderBadge('paid'), { variant: 'confirmed', label: 'Payment confirmed' });
   assert.deepEqual(orderBadge('shipped'), { variant: 'shipping', label: 'Out for delivery' });
   assert.deepEqual(orderBadge('DELIVERED'), { variant: 'delivered', label: 'Delivered' });
-  assert.deepEqual(orderBadge(undefined), { variant: 'placed', label: 'Placed' });
+  assert.deepEqual(orderBadge(undefined), { variant: 'placed', label: 'Awaiting payment' });
+});
+
+test('pending orders read as awaiting payment or under review', () => {
+  assert.deepEqual(orderBadge('pending'), { variant: 'placed', label: 'Awaiting payment' });
+  assert.deepEqual(orderBadge('pending', { status: 'submitted', rejection_reason: '' }), { variant: 'shipping', label: 'Payment under review' });
+  assert.deepEqual(orderBadge('pending', { status: 'rejected', rejection_reason: 'x' }), { variant: 'cancelled', label: 'Payment not confirmed' });
+  assert.deepEqual(orderBadge('paid'), { variant: 'confirmed', label: 'Payment confirmed' });
+  assert.deepEqual(orderSteps('pending')?.map((s) => s.label), ['Awaiting payment', 'Payment confirmed', 'Out for delivery', 'Delivered']);
 });
 
 test('orderSteps marks done, current and todo; delivered is all done', () => {

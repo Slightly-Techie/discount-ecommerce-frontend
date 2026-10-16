@@ -36,14 +36,10 @@ export const useOrder = (orderId: string | undefined) => {
 
   useEffect(() => {
     if (orderId) {
-      // First check if we have it in cache
-      const cachedOrder = getOrderById(orderId);
-      if (!cachedOrder) {
-        // Only fetch if not in cache
-        fetchOrder(orderId);
-      }
+      // Always load fresh (payment state changes server-side); a cached copy is shown meanwhile
+      fetchOrder(orderId, { force: true });
     }
-  }, [orderId, fetchOrder, getOrderById]);
+  }, [orderId, fetchOrder]);
 
   const order = orderId ? getOrderById(orderId) : null;
   const isLoading = !order && isUpdating;
@@ -52,6 +48,6 @@ export const useOrder = (orderId: string | undefined) => {
     data: order,
     isLoading,
     error: null, // Store handles errors internally
-    refetch: () => orderId ? fetchOrder(orderId) : Promise.resolve(null)
+    refetch: () => orderId ? fetchOrder(orderId, { force: true }) : Promise.resolve(null)
   };
 }; 

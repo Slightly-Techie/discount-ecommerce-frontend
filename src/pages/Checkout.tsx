@@ -1,15 +1,18 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Info, MapPin, Package, Wallet } from "lucide-react";
 
 import { Layout } from "@/components/Layout";
+import { PaymentAccountsList } from "@/components/PaymentAccountsList";
+import { PaymentProofForm } from "@/components/PaymentProofForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsAuthenticated } from "@/hooks/useAuth";
 import { useCreateAddress } from "@/hooks/useUsers";
-import { orderApi } from "@/lib/api";
+import { orderApi, paymentsApi } from "@/lib/api";
 import { COUPON_KEY } from "@/lib/checkout";
 import { dealPricing } from "@/lib/deal";
 import { orderNumber } from "@/lib/orders";
@@ -34,6 +37,7 @@ interface Address {
 
 interface PlacedOrder {
   id: string;
+  checkout_group?: string;
   total: string;
   shipping: string;
   tax: string;
@@ -43,8 +47,8 @@ interface PlacedOrder {
 }
 
 
-// Payment is not integrated yet: Pay on delivery is the only method that can be
-// chosen, and mobile money is shown as coming soon rather than faked.
+// Payment is by transfer to GrottoMore's own bank or mobile money accounts; the
+// shopper then submits proof, and an admin confirms it before the order is paid.
 const Checkout = () => {
   const { isAuthenticated, isLoading: authLoading, user } = useIsAuthenticated();
   const cart = useCartStore((s) => s.cart);
@@ -58,6 +62,9 @@ const Checkout = () => {
   const [placed, setPlaced] = useState<PlacedOrder[] | null>(null);
   const [addressForm, setAddressForm] = useState({ line1: "", city: "", state: "Greater Accra" });
   const [addressError, setAddressError] = useState<string | null>(null);
+  const [proofSent, setProofSent] = useState(false);
+  const accountsQuery = useQuery({ queryKey: ["payments", "accounts"], queryFn: paymentsApi.listAccounts });
+  const accounts = accountsQuery.data ?? [];
 
   useEffect(() => {
     if (isAuthenticated) fetchCart().catch(() => undefined);
@@ -128,9 +135,9 @@ const Checkout = () => {
           <h1 className="text-2xl font-bold">Order placed</h1>
           <p className="text-[15px] text-muted-foreground">
             {placed.length === 1 ? (
-              <>Order <strong className="text-foreground">#{orderNumber(placed[0].id)}</strong>. You’ll pay on delivery.</>
+              <>Order <strong className="text-foreground">#{orderNumber(placed[0].id)}</strong>. Send the amount below to pay for it.</>
             ) : (
-              <>Your items come from {placed.length} sellers, so we created {placed.length} orders. You’ll pay on delivery.</>
+              <>Your items come from {placed.length} sellers, so we created {placed.length} orders. Send one payment for the total below.</>
             )}
           </p>
           <dl className="w-full rounded-lg border p-5 text-left text-[15px]">
@@ -159,7 +166,7 @@ const Checkout = () => {
                 </div>
               ))}
             <div className="mt-1 flex justify-between border-t pt-2.5 text-lg font-bold">
-              <dt>To pay on delivery</dt>
+              <dt>Send this amount</dt>
               <dd className="tabular-prices">{formatGHS(total)}</dd>
             </div>
             {address && (
@@ -171,6 +178,36 @@ const Checkout = () => {
               </div>
             )}
           </dl>
+          <div className="flex w-full flex-col gap-4 rounded-lg border p-5 text-left">
+            <h2 className="text-lg font-bold">Send this amount</h2>
+            {accountsQuery.isError ? (
+              <p role="alert" className="flex items-start gap-2 rounded-md bg-destructive-subtle p-3 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                We couldn’t load the payment accounts. Check your connection and refresh.
+              </p>
+            ) : accountsQuery.isPending ? (
+              <p role="status" className="text-sm text-muted-foreground">
+                Loading payment accounts…
+              </p>
+            ) : (
+              <PaymentAccountsList accounts={accounts} amount={total} />
+            )}
+            {proofSent ? (
+              <p role="status" className="rounded-md bg-save-subtle p-3 text-sm text-save">
+                Thanks — we’re checking your payment. We’ll notify you when it’s confirmed.
+              </p>
+            ) : (
+              <>
+                <h3 className="text-base font-bold">Paid already? Tell us.</h3>
+                <PaymentProofForm
+                  accounts={accounts}
+                  target={placed[0].checkout_group ? { checkoutGroup: placed[0].checkout_group } : { orderIds: placed.map((o) => o.id) }}
+                  defaultSenderName={[user?.first_name, user?.last_name].filter(Boolean).join(" ")}
+                  onSubmitted={() => setProofSent(true)}
+                />
+              </>
+            )}
+          </div>
           {warning && (
             <p className="flex items-start gap-2 rounded-lg bg-deal-subtle p-3 text-left text-sm text-deal-strong">
               <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
@@ -279,32 +316,24 @@ const Checkout = () => {
             <section aria-labelledby="payment-heading" className={step}>
               <h2 id="payment-heading" className={stepTitle}>
                 <Wallet className="h-5 w-5 text-primary" aria-hidden="true" />
-                2. Payment method
+                2. How to pay
               </h2>
-              <div role="radiogroup" aria-labelledby="payment-heading" className="flex flex-col gap-2">
-                <div role="radio" aria-checked="true" className="flex min-h-14 items-center gap-3 rounded-md border-2 border-primary bg-accent px-4">
-                  <span className="flex h-[22px] w-[22px] items-center justify-center rounded-full border-2 border-primary">
-                    <span className="h-2.5 w-2.5 rounded-full bg-primary" />
-                  </span>
-                  <div className="flex flex-col">
-                    <span className="text-[15px] font-semibold">Pay on delivery</span>
-                    <span className="text-[13px] text-muted-foreground">Pay the rider when your order arrives</span>
-                  </div>
-                </div>
-                {["MTN MoMo", "Telecel Cash", "AirtelTigo Money"].map((name) => (
-                  <div
-                    key={name}
-                    role="radio"
-                    aria-checked="false"
-                    aria-disabled="true"
-                    className="flex min-h-14 items-center gap-3 rounded-md border px-4 text-subtle"
-                  >
-                    <span className="h-[22px] w-[22px] rounded-full border-2 border-[#C9D0CE] bg-muted" />
-                    <span className="flex-1 text-[15px] font-medium">{name}</span>
-                    <span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">Coming soon</span>
-                  </div>
-                ))}
-              </div>
+              {accountsQuery.isSuccess && accounts.length === 0 ? (
+                <p role="alert" className="flex items-start gap-2 rounded-md bg-deal-subtle p-3 text-sm text-deal-strong">
+                  <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  Payments are being set up. Please check back soon.
+                </p>
+              ) : accountsQuery.isError ? (
+                <p role="alert" className="flex items-start gap-2 rounded-md bg-destructive-subtle p-3 text-sm text-destructive">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                  We couldn’t load the payment accounts. Check your connection and refresh.
+                </p>
+              ) : (
+                <>
+                  <PaymentAccountsList accounts={accounts} />
+                  <p className="text-sm text-muted-foreground">You’ll see the exact amount to send after you place your order.</p>
+                </>
+              )}
             </section>
 
             <section aria-labelledby="summary-heading" className={step}>
@@ -356,8 +385,8 @@ const Checkout = () => {
             )}
 
             <div className="fixed inset-x-0 bottom-0 z-sticky border-t bg-background px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3 shadow-lg lg:static lg:border-0 lg:p-0 lg:shadow-none">
-              <Button variant="deal" size="lg" className="w-full" onClick={placeOrder} disabled={placing || !address}>
-                {placing ? "Placing order…" : "Place order · pay on delivery"}
+              <Button variant="deal" size="lg" className="w-full" onClick={placeOrder} disabled={placing || !address || accounts.length === 0}>
+                {placing ? "Placing order…" : "Place order"}
               </Button>
               {!address && <p className="mt-1.5 text-center text-[13px] text-muted-foreground">Save a delivery address to continue</p>}
             </div>

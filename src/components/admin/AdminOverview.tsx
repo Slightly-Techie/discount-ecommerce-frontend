@@ -10,6 +10,7 @@ import {
   ShoppingCart,
   Store,
   Users,
+  Wallet,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,11 @@ export function AdminOverview({ onNavigate, onOpenVendor }: AdminOverviewProps) 
   const { data: pending } = useQuery({
     queryKey: ["vendors", "list", "admin", "pending-queue"],
     queryFn: () => adminApi.getVendors({ status: "pending", page_size: 5, ordering: "created_at" }),
+    refetchInterval: 30 * 1000,
+  });
+  const { data: paymentsToReview } = useQuery({
+    queryKey: ["admin", "payment-submissions", "count"],
+    queryFn: () => adminApi.paymentSubmissions.list({ status: "submitted", page_size: 1 }),
     refetchInterval: 30 * 1000,
   });
   const approve = useVendorAction("approve");
@@ -69,6 +75,12 @@ export function AdminOverview({ onNavigate, onOpenVendor }: AdminOverviewProps) 
       value: stats.pending_product_reviews,
       icon: MessageSquare,
       tab: "reviews",
+    },
+    {
+      label: "Payments to review",
+      value: paymentsToReview?.count ?? 0,
+      icon: Wallet,
+      tab: "payments",
     },
   ];
 

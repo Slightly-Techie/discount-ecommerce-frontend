@@ -2,6 +2,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { orderApi, authApi } from "@/lib/api";
+import type { OrderPayment } from "@/types/payments";
 
 export interface OrderItem {
   id: string;
@@ -31,6 +32,8 @@ export interface Order {
   checked_out_at: string;
   created_at: string;
   updated_at: string;
+  checkout_group?: string | null;
+  payment?: OrderPayment | null;
 }
 
 interface OrdersState {
@@ -42,7 +45,7 @@ interface OrdersState {
   
   // Actions
   fetchOrders: (currentUserId?: string) => Promise<void>;
-  fetchOrder: (orderId: string) => Promise<Order | null>;
+  fetchOrder: (orderId: string, opts?: { force?: boolean }) => Promise<Order | null>;
   addOrder: (order: Order) => void;
   updateOrder: (orderId: string, updates: Partial<Order>) => void;
   clearOrders: () => void;
@@ -108,10 +111,10 @@ export const useOrdersStore = create<OrdersState>()(
         }
       },
 
-      fetchOrder: async (orderId: string): Promise<Order | null> => {
-        // First check if we have it in cache
+      fetchOrder: async (orderId: string, opts?: { force?: boolean }): Promise<Order | null> => {
+        // First check if we have it in cache (unless a fresh copy is required)
         const cachedOrder = get().getOrderById(orderId);
-        if (cachedOrder) {
+        if (cachedOrder && !opts?.force) {
           console.log('Order found in cache:', cachedOrder);
           set({ currentOrder: cachedOrder });
           return cachedOrder;
@@ -138,7 +141,10 @@ export const useOrdersStore = create<OrdersState>()(
                 currentOrder: order 
               }));
             } else {
-              set({ currentOrder: order });
+              set(state => ({
+                orders: state.orders.map(o => (o.id === order.id ? order : o)),
+                currentOrder: order
+              }));
             }
             return order;
           }

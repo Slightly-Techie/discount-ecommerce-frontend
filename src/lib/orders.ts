@@ -1,14 +1,18 @@
 // Order status display. API statuses: pending, paid, shipped, delivered, cancelled.
+import type { OrderPayment } from '../types/payments';
 
 export type OrderBadge = 'placed' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled';
 
 const FLOW = ['pending', 'paid', 'shipped', 'delivered'] as const;
-const LABELS = ['Placed', 'Confirmed', 'Out for delivery', 'Delivered'] as const;
+const LABELS = ['Awaiting payment', 'Payment confirmed', 'Out for delivery', 'Delivered'] as const;
 
-export function orderBadge(status: string | null | undefined): { variant: OrderBadge; label: string } {
+export function orderBadge(
+  status: string | null | undefined,
+  payment?: OrderPayment | null
+): { variant: OrderBadge; label: string } {
   switch ((status || 'pending').toLowerCase()) {
     case 'paid':
-      return { variant: 'confirmed', label: 'Confirmed' };
+      return { variant: 'confirmed', label: 'Payment confirmed' };
     case 'shipped':
       return { variant: 'shipping', label: 'Out for delivery' };
     case 'delivered':
@@ -16,7 +20,9 @@ export function orderBadge(status: string | null | undefined): { variant: OrderB
     case 'cancelled':
       return { variant: 'cancelled', label: 'Cancelled' };
     default:
-      return { variant: 'placed', label: 'Placed' };
+      if (payment?.status === 'submitted') return { variant: 'shipping', label: 'Payment under review' };
+      if (payment?.status === 'rejected') return { variant: 'cancelled', label: 'Payment not confirmed' };
+      return { variant: 'placed', label: 'Awaiting payment' };
   }
 }
 
@@ -26,7 +32,10 @@ export function isActiveOrder(status: string | null | undefined): boolean {
 }
 
 /** Stepper states for a non-cancelled order; null for cancelled orders. */
-export function orderSteps(status: string | null | undefined): { label: string; state: 'done' | 'current' | 'todo' }[] | null {
+export function orderSteps(
+  status: string | null | undefined,
+  payment?: OrderPayment | null
+): { label: string; state: 'done' | 'current' | 'todo' }[] | null {
   const s = (status || 'pending').toLowerCase();
   if (s === 'cancelled') return null;
   const at = Math.max(0, FLOW.indexOf(s as (typeof FLOW)[number]));

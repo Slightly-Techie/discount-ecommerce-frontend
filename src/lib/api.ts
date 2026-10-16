@@ -1,5 +1,6 @@
 import api from './axios';
 import { API_BASE_URL } from './axios';
+import type { AdminPaymentSubmission, PaymentAccount, PaymentSubmission } from '@/types/payments';
 import { 
   Product, 
   CartItem,
@@ -334,6 +335,26 @@ export const categoryApi = {
   },
 };  
 
+// Manual payments (bank / MoMo transfer, admin-confirmed)
+export const paymentsApi = {
+  listAccounts: async (): Promise<PaymentAccount[]> => {
+    const response = await api.get('/payments/accounts/');
+    return response.data;
+  },
+  submit: async (form: FormData): Promise<PaymentSubmission> => {
+    const response = await api.post('/payments/submissions/', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    });
+    return response.data;
+  },
+  /** Screenshots need the auth header, so fetch as a blob and hand back an object URL. */
+  screenshotBlobUrl: async (url: string): Promise<string> => {
+    const response = await api.get(url, { responseType: 'blob', baseURL: '' });
+    return URL.createObjectURL(response.data);
+  },
+};
+
 // Users API
 export const userApi = {
   getUsers: async (): Promise<User[]> => {
@@ -518,6 +539,23 @@ export const adminApi = {
   // Categories & tags
   categories: crud<Category, string>('/category'),
   tags: crud<Tag, string>('/category/tags'),
+
+  // Manual payments
+  paymentAccounts: crud<PaymentAccount, string>('/payments/admin/accounts'),
+  paymentSubmissions: {
+    list: async (params?: ListParams & { status?: string }): Promise<PaginatedResponse<AdminPaymentSubmission>> => {
+      const response = await api.get('/payments/admin/submissions/', { params });
+      return response.data;
+    },
+    confirm: async (id: string): Promise<AdminPaymentSubmission> => {
+      const response = await api.post(`/payments/admin/submissions/${id}/confirm/`);
+      return response.data;
+    },
+    reject: async (id: string, reason: string): Promise<AdminPaymentSubmission> => {
+      const response = await api.post(`/payments/admin/submissions/${id}/reject/`, { reason });
+      return response.data;
+    },
+  },
 };
 
 export default api; 
