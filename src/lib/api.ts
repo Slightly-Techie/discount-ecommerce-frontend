@@ -24,7 +24,6 @@ import {
   User,
   UpdateUserData,
   Vendor,
-  VendorSignupData,
   VendorUpdatePayload,
   AdminVendor,
   CreateVendorPayload,
@@ -262,10 +261,6 @@ export const authApi = {
 
 // Vendors API
 export const vendorsApi = {
-  signup: async (data: VendorSignupData): Promise<any> => {
-    const response = await api.post('/vendors/signup/', data);
-    return response.data;
-  },
   getVendors: async (params?: ListParams): Promise<PaginatedResponse<Vendor>> => {
     const response = await api.get('/vendors/', { params });
     return response.data;

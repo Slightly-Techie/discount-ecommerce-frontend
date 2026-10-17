@@ -19,7 +19,7 @@ export function Footer() {
         </nav>
         <nav aria-label="GrottoMore" className="flex flex-col gap-2.5 text-[15px]">
           <strong>GrottoMore</strong>
-          <Link to="/register?as=vendor" className="text-primary hover:text-primary-strong">List your deals as a vendor</Link>
+          <Link to="/sell" className="text-primary hover:text-primary-strong">Sell on GrottoMore</Link>
         </nav>
       </div>
       <p className="container border-t py-4 pb-7 text-[13px] text-muted-foreground">

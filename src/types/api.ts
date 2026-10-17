@@ -129,15 +129,6 @@ export interface RefreshTokenData {
 }
 
 // Vendor API Types
-export interface VendorSignupData {
-  email: string;
-  phonenumber: string;
-  password: string;
-  first_name: string;
-  last_name: string;
-  vendor_name: string;
-}
-
 export interface Vendor {
   id: string;
   name: string;

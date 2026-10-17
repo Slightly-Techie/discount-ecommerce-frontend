@@ -1,8 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { vendorsApi } from '@/lib/api';
-import type { VendorSignupData, VendorUpdatePayload } from '@/types/api';
+import type { VendorRequestPayload, VendorUpdatePayload } from '@/types/api';
 import { useToast } from './use-toast';
-import { useNavigate } from 'react-router-dom';
 
 export const vendorKeys = {
   all: ['vendors'] as const,
@@ -11,36 +10,10 @@ export const vendorKeys = {
   me: () => [...vendorKeys.all, 'me'] as const,
 };
 
-export const useVendorSignup = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: VendorSignupData) => vendorsApi.signup(data),
-    onSuccess: () => {
-      toast({
-        title: 'Vendor registration submitted',
-        description:
-          'Your vendor account is pending approval. Log in to track your application — full dashboard access unlocks as soon as an administrator approves it.',
-      });
-      queryClient.invalidateQueries({ queryKey: vendorKeys.all });
-      navigate('/login');
-    },
-    onError: (error: any) => {
-      const message =
-        error?.response?.data?.detail ||
-        error?.response?.data?.email?.[0] ||
-        error?.response?.data?.vendor_name?.[0] ||
-        'Vendor registration failed. Please try again.';
-      toast({
-        title: 'Registration failed',
-        description: typeof message === 'string' ? message : JSON.stringify(message),
-        variant: 'destructive',
-      });
-    },
+export const useSubmitVendorRequest = () =>
+  useMutation({
+    mutationFn: (data: VendorRequestPayload) => vendorsApi.submitRequest(data),
   });
-};
 
 export const useVendorMe = (enabled: boolean = true, pollUntilApproved: boolean = false) => {
   return useQuery({
