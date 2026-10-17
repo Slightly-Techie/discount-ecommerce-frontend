@@ -85,6 +85,9 @@ export function LoginForm({ redirectTo = "/" }: LoginFormProps) {
             {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
           </button>
         </div>
+        <Link to="/forgot-password" className="self-end text-sm font-semibold text-primary hover:text-primary-strong">
+          Forgot password?
+        </Link>
       </div>
       <Button type="submit" className="w-full" disabled={login.isPending}>
         {login.isPending ? "Signing in…" : "Sign in"}
