@@ -12,6 +12,7 @@ export default function Login() {
   const [params] = useSearchParams();
   const from = safePath(params.get("next")) || safePath(location.state?.from?.pathname) || "/";
   const forCheckout = params.get("reason") === "checkout";
+  const passwordSet = params.get("reason") === "password-set";
 
   return (
     <Layout mobileBar={{ kind: "title", title: "Sign in" }}>
@@ -20,6 +21,12 @@ export default function Login() {
           <h1 className="text-2xl font-bold lg:text-[30px] lg:leading-[38px]">Sign in</h1>
           <p className="text-[15px] text-muted-foreground">Track orders and keep your saved deals on every device.</p>
         </div>
+        {passwordSet && (
+          <div role="status" className="flex items-start gap-3 rounded-lg bg-accent px-4 py-3.5 text-accent-foreground">
+            <Info className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
+            <p className="text-[15px] font-semibold">Password set. Sign in to continue.</p>
+          </div>
+        )}
         {forCheckout && (
           <div className="flex items-start gap-3 rounded-lg bg-accent px-4 py-3.5 text-accent-foreground">
             <Info className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />

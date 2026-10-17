@@ -1,46 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { vendorsApi } from '@/lib/api';
-import type { VendorSignupData, VendorUpdatePayload } from '@/types/api';
+import { ADMIN_PAGE_SIZE } from '@/components/admin/shared';
+import type {
+  CreateVendorPayload,
+  CreateVendorResponse,
+  VendorRequestPayload,
+  VendorRequestStatus,
+  VendorUpdatePayload,
+} from '@/types/api';
+import { apiErrorMessage } from '@/lib/apiErrors';
 import { useToast } from './use-toast';
-import { useNavigate } from 'react-router-dom';
 
 export const vendorKeys = {
   all: ['vendors'] as const,
   list: () => [...vendorKeys.all, 'list'] as const,
   detail: (id: string) => [...vendorKeys.all, id] as const,
   me: () => [...vendorKeys.all, 'me'] as const,
+  requests: () => [...vendorKeys.all, 'requests'] as const,
 };
 
-export const useVendorSignup = () => {
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (data: VendorSignupData) => vendorsApi.signup(data),
-    onSuccess: () => {
-      toast({
-        title: 'Vendor registration submitted',
-        description:
-          'Your vendor account is pending approval. Log in to track your application — full dashboard access unlocks as soon as an administrator approves it.',
-      });
-      queryClient.invalidateQueries({ queryKey: vendorKeys.all });
-      navigate('/login');
-    },
-    onError: (error: any) => {
-      const message =
-        error?.response?.data?.detail ||
-        error?.response?.data?.email?.[0] ||
-        error?.response?.data?.vendor_name?.[0] ||
-        'Vendor registration failed. Please try again.';
-      toast({
-        title: 'Registration failed',
-        description: typeof message === 'string' ? message : JSON.stringify(message),
-        variant: 'destructive',
-      });
-    },
+export const useSubmitVendorRequest = () =>
+  useMutation({
+    mutationFn: (data: VendorRequestPayload) => vendorsApi.submitRequest(data),
   });
-};
 
 export const useVendorMe = (enabled: boolean = true, pollUntilApproved: boolean = false) => {
   return useQuery({
@@ -134,5 +116,85 @@ export const useVendorAction = (action: VendorAction) => {
         variant: 'destructive',
       });
     },
+  });
+};
+
+// Admin: create a vendor (optionally from a seller request) and email the owner an invite link.
+export const useCreateVendor = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (data: CreateVendorPayload | FormData) => vendorsApi.createVendor(data),
+    onSuccess: (created: CreateVendorResponse) => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
+      if (created.invite_sent) {
+        toast({
+          title: 'Vendor created',
+          description: `Vendor created. Invite sent to ${created.owners?.[0]?.email ?? 'the owner'}.`,
+        });
+      } else {
+        toast({
+          title: 'Vendor created',
+          description: 'Vendor created, but the invite email failed. Use Resend invite.',
+          variant: 'destructive',
+        });
+      }
+    },
+  });
+};
+
+export const useResendInvite = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id }: { id: string; name?: string }) => vendorsApi.resendInvite(id),
+    onSuccess: ({ invite_sent }) => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.all });
+      toast(
+        invite_sent
+          ? { title: 'Invite sent' }
+          : {
+              title: 'Invite email failed',
+              description: 'The invite email could not be sent. Try again shortly.',
+              variant: 'destructive',
+            }
+      );
+    },
+    onError: (error) =>
+      toast({
+        title: 'Could not resend invite',
+        description: apiErrorMessage(error),
+        variant: 'destructive',
+      }),
+  });
+};
+
+export const useVendorRequests = (params: { status?: VendorRequestStatus; page?: number } = {}) =>
+  useQuery({
+    queryKey: [...vendorKeys.requests(), params],
+    queryFn: () => vendorsApi.listRequests({ ...params, page_size: ADMIN_PAGE_SIZE }),
+    placeholderData: (previous) => previous,
+  });
+
+export const useDismissVendorRequest = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => vendorsApi.dismissRequest(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.requests() });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({ title: 'Request dismissed' });
+    },
+    onError: (error) =>
+      toast({
+        title: 'Could not dismiss request',
+        description: apiErrorMessage(error),
+        variant: 'destructive',
+      }),
   });
 };

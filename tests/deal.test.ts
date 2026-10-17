@@ -64,9 +64,10 @@ test('productImage prefers uploaded image, then image_url, then gallery', () => 
   assert.equal(productImage({}), null);
 });
 
-test('retailerName uses source_platform, else labels vendor deals', () => {
+test('retailerName uses source_platform, then vendor name, else GrottoMore', () => {
   assert.equal(retailerName({ source: 'external', source_platform: 'Shoprite' }), 'Shoprite');
-  assert.equal(retailerName({ source: 'internal', source_platform: '' }), 'Vendor deal');
+  assert.equal(retailerName({ source: 'internal', source_platform: '', vendor: { name: 'Girlies' } }), 'Girlies');
+  assert.equal(retailerName({ source: 'internal', vendor: null }), 'GrottoMore');
   assert.equal(retailerName({}), 'GrottoMore');
 });
 

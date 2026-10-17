@@ -55,8 +55,8 @@ export const useCreateProduct = () => {
       // Invalidate and refetch products list
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
       
-      // Add the new product to the cache
-      queryClient.setQueryData(productKeys.detail(newProduct.id), newProduct);
+      // The response carries vendor as a bare id, so refetch the detail instead of caching it.
+      queryClient.invalidateQueries({ queryKey: productKeys.detail(newProduct.id) });
       
       toast({
         title: "Product created",
@@ -82,8 +82,8 @@ export const useUpdateProduct = () => {
     mutationFn: ({ id, product }: { id: string; product: UpdateProductData }) =>
       productApi.updateProduct(id, product),
     onSuccess: (updatedProduct) => {
-      // Update the product in cache
-      queryClient.setQueryData(productKeys.detail(updatedProduct.id), updatedProduct);
+      // The response carries vendor as a bare id, so refetch the detail instead of caching it.
+      queryClient.invalidateQueries({ queryKey: productKeys.detail(updatedProduct.id) });
       
       // Invalidate products list to reflect changes
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });

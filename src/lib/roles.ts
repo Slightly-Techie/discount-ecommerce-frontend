@@ -12,3 +12,6 @@ export const canManageUsers = (user: RoleUser): boolean =>
 
 /** Order status update: vendor admins can't mark an order paid (GrottoMore confirms payments). */
 export const canMarkOrdersPaid = (user: RoleUser): boolean => !!user && user.role !== "vendor_admin";
+
+/** A vendor account (role vendor_admin). Used to keep other roles off the vendor dashboard. */
+export const isVendorAdmin = (user: RoleUser): boolean => !!user && user.role === "vendor_admin";

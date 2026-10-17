@@ -24,9 +24,13 @@ import {
   User,
   UpdateUserData,
   Vendor,
-  VendorSignupData,
   VendorUpdatePayload,
   AdminVendor,
+  CreateVendorPayload,
+  CreateVendorResponse,
+  VendorRequest,
+  VendorRequestPayload,
+  VendorRequestStatus,
   AdminOrder,
   AdminStats,
   AppNotification,
@@ -246,16 +250,43 @@ export const authApi = {
     const response = await api.get('/users/me/');
     return response.data;
   },
+  requestPasswordReset: async (email: string): Promise<void> => {
+    await api.post('/users/password-reset/', { email });
+  },
+  confirmPasswordReset: async (data: { uid: string; token: string; new_password: string }): Promise<{ detail: string }> => {
+    const response = await api.post('/users/password-reset-confirm/', data);
+    return response.data;
+  },
 };
 
 // Vendors API
 export const vendorsApi = {
-  signup: async (data: VendorSignupData): Promise<any> => {
-    const response = await api.post('/vendors/signup/', data);
-    return response.data;
-  },
   getVendors: async (params?: ListParams): Promise<PaginatedResponse<Vendor>> => {
     const response = await api.get('/vendors/', { params });
+    return response.data;
+  },
+  createVendor: async (data: CreateVendorPayload | FormData): Promise<CreateVendorResponse> => {
+    const response = await api.post(
+      '/vendors/',
+      data,
+      data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined,
+    );
+    return response.data;
+  },
+  resendInvite: async (id: string): Promise<{ invite_sent: boolean }> => {
+    const response = await api.post(`/vendors/${id}/resend-invite/`);
+    return response.data;
+  },
+  submitRequest: async (data: VendorRequestPayload): Promise<{ detail: string }> => {
+    const response = await api.post('/vendors/requests/', data);
+    return response.data;
+  },
+  listRequests: async (params?: { status?: VendorRequestStatus; page?: number; page_size?: number }): Promise<PaginatedResponse<VendorRequest>> => {
+    const response = await api.get('/vendors/requests/', { params });
+    return response.data;
+  },
+  dismissRequest: async (id: string): Promise<VendorRequest> => {
+    const response = await api.patch(`/vendors/requests/${id}/dismiss/`);
     return response.data;
   },
   getVendorMe: async (): Promise<Vendor> => {

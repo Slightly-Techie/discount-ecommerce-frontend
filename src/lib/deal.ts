@@ -91,6 +91,7 @@ export interface DisplayFields {
   images?: { image: string }[] | null;
   source?: string | null;
   source_platform?: string | null;
+  vendor?: { name: string } | null;
 }
 
 /** First available photo: uploaded image, retailer image_url, then the gallery. */
@@ -98,11 +99,11 @@ export function productImage(p: DisplayFields): string | null {
   return p.image || p.image_url || p.images?.[0]?.image || null;
 }
 
-/** Retailer for external deals; vendor deals listed on GrottoMore read "Vendor deal". */
+/** "Sold by" brand: the retailer for external deals, else the vendor's name, else GrottoMore. */
 export function retailerName(p: DisplayFields): string {
   const platform = p.source_platform?.trim();
   if (platform) return platform;
-  return p.source === 'internal' ? 'Vendor deal' : 'GrottoMore';
+  return p.vendor?.name?.trim() || 'GrottoMore';
 }
 
 /** "Sun 18 Oct" in Accra time. */

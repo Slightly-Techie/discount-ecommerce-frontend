@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { VendorProductsPanel } from "@/components/VendorProductsPanel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { productApi } from "@/lib/api";
+import { productKeys } from "@/hooks/useProducts";
+import { isVendorAdmin } from "@/lib/roles";
 
 export default function VendorDashboard() {
   const { isAuthenticated, isLoading: authLoading, user } = useIsAuthenticated();
@@ -45,7 +47,7 @@ export default function VendorDashboard() {
   const [activeSection, setActiveSection] = useState<"overview" | "products" | "profile">("overview");
 
   const { data: vendorProducts } = useQuery({
-    queryKey: ["products", "vendor", vendor?.id],
+    queryKey: productKeys.list({ vendor: vendor?.id }),
     queryFn: () => productApi.getProducts({ vendor: vendor!.id }),
     enabled: !!vendor?.id,
     staleTime: 2 * 60 * 1000,
@@ -55,14 +57,16 @@ export default function VendorDashboard() {
     // Wait for the current-user request before deciding, so a page refresh doesn't bounce to login
     if (!authLoading && !isAuthenticated) {
       navigate("/login");
+    } else if (!authLoading && user && !isVendorAdmin(user)) {
+      navigate("/");
     }
-  }, [authLoading, isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, user, navigate]);
 
   const status = vendor?.status;
 
   const isBlocked = status === "pending" || status === "suspended" || status === "rejected";
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated || (user && !isVendorAdmin(user))) return null;
 
   return (
     <Layout>
@@ -71,7 +75,11 @@ export default function VendorDashboard() {
         <aside className="w-64 bg-white shadow-lg flex flex-col">
           <div className="px-6 py-5 border-b">
             <div className="flex items-center gap-2">
-              <Store className="h-5 w-5 text-primary" />
+              {vendor?.logo ? (
+                <img src={vendor.logo} alt="" className="h-8 w-8 rounded object-cover" />
+              ) : (
+                <Store className="h-5 w-5 text-primary" />
+              )}
               <div>
                 <h1 className="text-lg font-bold">Vendor Dashboard</h1>
                 <p className="text-xs text-muted-foreground truncate">
@@ -227,7 +235,7 @@ export default function VendorDashboard() {
                     </CardHeader>
                     <CardContent className="space-y-1">
                       <p className="text-2xl font-bold">
-                        {vendorProducts?.results.length ?? 0}
+                        {vendorProducts?.count ?? vendorProducts?.results.length ?? 0}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Number of products listed under your store.
@@ -251,6 +259,23 @@ export default function VendorDashboard() {
                     </CardContent>
                   </Card>
                 </div>
+
+                {status === "approved" && vendorProducts && vendorProducts.results.length === 0 && (
+                  <Card className="border-primary/40 bg-primary/5">
+                    <CardHeader>
+                      <CardTitle className="text-base">Add your first product</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm">
+                      <p className="text-muted-foreground">
+                        Your store is approved. List a product to start selling on GrottoMore.
+                      </p>
+                      <Button size="sm" onClick={() => setActiveSection("products")}>
+                        <Package className="h-4 w-4 mr-1" />
+                        Add your first product
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between">

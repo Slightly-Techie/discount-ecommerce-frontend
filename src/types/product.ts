@@ -19,6 +19,8 @@ export interface Product {
   /** Retailer name for external deals, e.g. "Shoprite". */
   source_platform?: string | null;
   source_url?: string | null;
+  /** The vendor selling this product; null for GrottoMore's own listings. */
+  vendor?: { id: string; name: string; slug: string } | null;
   created_at?: string;
   category: {
     id?: string;
