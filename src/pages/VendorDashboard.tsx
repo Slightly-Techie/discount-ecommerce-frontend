@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { VendorProductsPanel } from "@/components/VendorProductsPanel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { productApi } from "@/lib/api";
+import { productKeys } from "@/hooks/useProducts";
 import { isVendorAdmin } from "@/lib/roles";
 
 export default function VendorDashboard() {
@@ -46,7 +47,7 @@ export default function VendorDashboard() {
   const [activeSection, setActiveSection] = useState<"overview" | "products" | "profile">("overview");
 
   const { data: vendorProducts } = useQuery({
-    queryKey: ["products", "vendor", vendor?.id],
+    queryKey: productKeys.list({ vendor: vendor?.id }),
     queryFn: () => productApi.getProducts({ vendor: vendor!.id }),
     enabled: !!vendor?.id,
     staleTime: 2 * 60 * 1000,
@@ -234,7 +235,7 @@ export default function VendorDashboard() {
                     </CardHeader>
                     <CardContent className="space-y-1">
                       <p className="text-2xl font-bold">
-                        {vendorProducts?.results.length ?? 0}
+                        {vendorProducts?.count ?? vendorProducts?.results.length ?? 0}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Number of products listed under your store.

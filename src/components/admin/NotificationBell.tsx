@@ -49,7 +49,7 @@ export function NotificationBell({ onOpenVendor }: NotificationBellProps) {
   const handleClick = (notification: AppNotification) => {
     if (!notification.is_read) markRead.mutate(notification.id);
     if (notification.type === "vendor_request") {
-      navigate("/admin?tab=vendors");
+      navigate("/admin?tab=vendors&view=requests");
       setOpen(false);
     } else if (notification.vendor && onOpenVendor) {
       onOpenVendor(notification.vendor.id);

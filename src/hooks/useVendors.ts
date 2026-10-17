@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { vendorsApi } from '@/lib/api';
+import { ADMIN_PAGE_SIZE } from '@/components/admin/shared';
 import type {
   CreateVendorPayload,
   CreateVendorResponse,
@@ -174,7 +175,7 @@ export const useResendInvite = () => {
 export const useVendorRequests = (params: { status?: VendorRequestStatus; page?: number } = {}) =>
   useQuery({
     queryKey: [...vendorKeys.requests(), params],
-    queryFn: () => vendorsApi.listRequests(params),
+    queryFn: () => vendorsApi.listRequests({ ...params, page_size: ADMIN_PAGE_SIZE }),
     placeholderData: (previous) => previous,
   });
 

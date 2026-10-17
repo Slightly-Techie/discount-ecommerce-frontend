@@ -81,11 +81,11 @@ export default function Sell() {
                 {error}
               </div>
             )}
-            {field("business_name", "Business name", { autoComplete: "organization" })}
-            {field("contact_name", "Your name", { autoComplete: "name" })}
-            {field("email", "Email", { type: "email", inputMode: "email", autoComplete: "email" })}
-            {field("phone", "Phone", { type: "tel", inputMode: "tel", autoComplete: "tel" })}
-            {field("sells", "What do you sell?")}
+            {field("business_name", "Business name *", { autoComplete: "organization" })}
+            {field("contact_name", "Your name *", { autoComplete: "name" })}
+            {field("email", "Email *", { type: "email", inputMode: "email", autoComplete: "email" })}
+            {field("phone", "Phone *", { type: "tel", inputMode: "tel", autoComplete: "tel" })}
+            {field("sells", "What do you sell? *")}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="message" className="text-sm font-semibold">
                 Anything else (optional)

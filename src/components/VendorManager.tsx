@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Ban, CheckCircle2, Eye, Loader2, Mail, Pencil, Plus, Store, XCircle } from "lucide-react";
@@ -77,7 +78,10 @@ export function VendorManager({ focusVendorId, onFocusHandled }: VendorManagerPr
   const suspend = useVendorAction("suspend");
   const resendInvite = useResendInvite();
   const dismissRequest = useDismissVendorRequest();
-  const [view, setView] = useState<"vendors" | "requests">("vendors");
+  const [searchParams] = useSearchParams();
+  const [view, setView] = useState<"vendors" | "requests">(
+    searchParams.get("view") === "requests" ? "requests" : "vendors",
+  );
   const [requestStatus, setRequestStatus] = useState<VendorRequestStatus>("new");
   const [requestPage, setRequestPage] = useState(1);
   const requests = useVendorRequests({ status: requestStatus, page: requestPage });

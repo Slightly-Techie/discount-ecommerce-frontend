@@ -266,7 +266,11 @@ export const vendorsApi = {
     return response.data;
   },
   createVendor: async (data: CreateVendorPayload | FormData): Promise<CreateVendorResponse> => {
-    const response = await api.post('/vendors/', data);
+    const response = await api.post(
+      '/vendors/',
+      data,
+      data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined,
+    );
     return response.data;
   },
   resendInvite: async (id: string): Promise<{ invite_sent: boolean }> => {
@@ -277,7 +281,7 @@ export const vendorsApi = {
     const response = await api.post('/vendors/requests/', data);
     return response.data;
   },
-  listRequests: async (params?: { status?: VendorRequestStatus; page?: number }): Promise<PaginatedResponse<VendorRequest>> => {
+  listRequests: async (params?: { status?: VendorRequestStatus; page?: number; page_size?: number }): Promise<PaginatedResponse<VendorRequest>> => {
     const response = await api.get('/vendors/requests/', { params });
     return response.data;
   },
