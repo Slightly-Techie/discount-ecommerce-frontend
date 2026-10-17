@@ -8,6 +8,12 @@ const FIELD_LABELS: Record<string, string> = {
   discount_end: "Discount end date",
   image_url: "Image URL",
   related_products: "Related products",
+  owner_email: "Owner email",
+  owner_phonenumber: "Owner phone",
+  owner_first_name: "Owner first name",
+  owner_last_name: "Owner last name",
+  business_email: "Business email",
+  request: "Request",
 };
 
 const label = (field: string) =>

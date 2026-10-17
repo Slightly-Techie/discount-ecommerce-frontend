@@ -26,7 +26,8 @@ import {
   vendorKeys,
 } from "@/hooks/useVendors";
 import { adminApi, vendorsApi } from "@/lib/api";
-import { Pager, SearchBox, apiErrorMessage, useAdminList } from "@/components/admin/shared";
+import { Pager, SearchBox, useAdminList } from "@/components/admin/shared";
+import { apiErrorMessage } from "@/lib/apiErrors";
 import type {
   AdminVendor,
   CreateVendorPayload,
