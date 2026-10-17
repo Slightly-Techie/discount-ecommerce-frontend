@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { Bell, CheckCheck, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ interface NotificationBellProps {
 export function NotificationBell({ onOpenVendor }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { data: unread = 0 } = useUnreadNotificationCount();
   const { data, isLoading } = useNotifications({ page_size: 20 });
   const markRead = useMarkNotificationRead();
@@ -46,7 +48,10 @@ export function NotificationBell({ onOpenVendor }: NotificationBellProps) {
 
   const handleClick = (notification: AppNotification) => {
     if (!notification.is_read) markRead.mutate(notification.id);
-    if (notification.vendor && onOpenVendor) {
+    if (notification.type === "vendor_request") {
+      navigate("/admin?tab=vendors");
+      setOpen(false);
+    } else if (notification.vendor && onOpenVendor) {
       onOpenVendor(notification.vendor.id);
       setOpen(false);
     }

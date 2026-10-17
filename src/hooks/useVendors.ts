@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { vendorsApi } from '@/lib/api';
-import type { VendorRequestPayload, VendorUpdatePayload } from '@/types/api';
+import type {
+  CreateVendorPayload,
+  CreateVendorResponse,
+  VendorRequestPayload,
+  VendorRequestStatus,
+  VendorUpdatePayload,
+} from '@/types/api';
+import { apiErrorMessage } from '@/lib/apiErrors';
 import { useToast } from './use-toast';
 
 export const vendorKeys = {
@@ -8,6 +15,7 @@ export const vendorKeys = {
   list: () => [...vendorKeys.all, 'list'] as const,
   detail: (id: string) => [...vendorKeys.all, id] as const,
   me: () => [...vendorKeys.all, 'me'] as const,
+  requests: () => [...vendorKeys.all, 'requests'] as const,
 };
 
 export const useSubmitVendorRequest = () =>
@@ -107,5 +115,85 @@ export const useVendorAction = (action: VendorAction) => {
         variant: 'destructive',
       });
     },
+  });
+};
+
+// Admin: create a vendor (optionally from a seller request) and email the owner an invite link.
+export const useCreateVendor = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (data: CreateVendorPayload | FormData) => vendorsApi.createVendor(data),
+    onSuccess: (created: CreateVendorResponse) => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
+      if (created.invite_sent) {
+        toast({
+          title: 'Vendor created',
+          description: `Vendor created. Invite sent to ${created.owners?.[0]?.email ?? 'the owner'}.`,
+        });
+      } else {
+        toast({
+          title: 'Vendor created',
+          description: 'Vendor created, but the invite email failed. Use Resend invite.',
+          variant: 'destructive',
+        });
+      }
+    },
+  });
+};
+
+export const useResendInvite = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id }: { id: string; name?: string }) => vendorsApi.resendInvite(id),
+    onSuccess: ({ invite_sent }) => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.all });
+      toast(
+        invite_sent
+          ? { title: 'Invite sent' }
+          : {
+              title: 'Invite email failed',
+              description: 'The invite email could not be sent. Try again shortly.',
+              variant: 'destructive',
+            }
+      );
+    },
+    onError: (error) =>
+      toast({
+        title: 'Could not resend invite',
+        description: apiErrorMessage(error),
+        variant: 'destructive',
+      }),
+  });
+};
+
+export const useVendorRequests = (params: { status?: VendorRequestStatus; page?: number } = {}) =>
+  useQuery({
+    queryKey: [...vendorKeys.requests(), params],
+    queryFn: () => vendorsApi.listRequests(params),
+    placeholderData: (previous) => previous,
+  });
+
+export const useDismissVendorRequest = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: (id: string) => vendorsApi.dismissRequest(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.requests() });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast({ title: 'Request dismissed' });
+    },
+    onError: (error) =>
+      toast({
+        title: 'Could not dismiss request',
+        description: apiErrorMessage(error),
+        variant: 'destructive',
+      }),
   });
 };
