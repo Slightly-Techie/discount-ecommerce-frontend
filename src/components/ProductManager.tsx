@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Save, Edit, Trash2, Package } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,8 +18,8 @@ import {
 import { useCategories } from "@/hooks/useCategories";
 import { Product, ProductFilters } from "@/types";
 import type { ProductStatus } from "@/types/product";
-import { adminApi } from "@/lib/api";
-import { slugify } from "@/lib/apiErrors";
+import { adminApi, vendorsApi } from "@/lib/api";
+import { apiErrorMessage, slugify } from "@/lib/apiErrors";
 import { formatGHS } from "@/lib/price";
 
 /** Map typed tag names to tag IDs, creating tags that don't exist yet. */
@@ -40,9 +41,11 @@ const idsFrom = (items: unknown[] | undefined) =>
 
 interface ProductManagerProps {
   filters?: ProductFilters;
+  /** "vendor" hides the Featured and Vendor fields; the API ignores them for vendors anyway. */
+  mode?: "admin" | "vendor";
 }
 
-export default function ProductManager({ filters }: ProductManagerProps) {
+export default function ProductManager({ filters, mode = "admin" }: ProductManagerProps) {
   const { toast } = useToast();
   const { data: productsResponse } = useProducts(filters);
   const products = productsResponse?.results || [];
@@ -50,6 +53,16 @@ export default function ProductManager({ filters }: ProductManagerProps) {
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
   const { data: categoryMutation } = useCategories();
+  const isAdminMode = mode === "admin";
+  const { data: vendorsResponse, error: vendorsError } = useQuery({
+    queryKey: ["vendors", "picker"],
+    queryFn: () => vendorsApi.getVendors({ page_size: 100 }),
+    enabled: isAdminMode,
+  });
+  const vendorOptions = [
+    { value: "", label: "GrottoMore (no vendor)" },
+    ...(vendorsResponse?.results || []).map((v) => ({ value: v.id, label: v.name })),
+  ];
 
   const [isAddingProduct, setIsAddingProduct] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -66,6 +79,7 @@ export default function ProductManager({ filters }: ProductManagerProps) {
     status: "active" as ProductStatus,
     is_available: true,
     is_featured: false,
+    vendor: "",
     stock: "",
     related_products: "",
   });
@@ -85,6 +99,7 @@ export default function ProductManager({ filters }: ProductManagerProps) {
       status: "active",
       is_available: true,
       is_featured: false,
+      vendor: "",
       stock: "",
       related_products: "",
     });
@@ -106,8 +121,10 @@ export default function ProductManager({ filters }: ProductManagerProps) {
 
     setSaving(true);
     try {
+      const { vendor, is_featured, ...rest } = formData;
       const productData = {
-        ...formData,
+        ...rest,
+        ...(isAdminMode ? { is_featured, vendor: vendor || null } : {}),
         price: formData.price,
         discount_price: formData.discount_price || undefined,
         discount_start: formData.discount_start || undefined,
@@ -154,6 +171,7 @@ export default function ProductManager({ filters }: ProductManagerProps) {
       status: product.status,
       is_available: product.is_available,
       is_featured: product.is_featured,
+      vendor: product.vendor?.id ?? "",
       stock: product.stock.toString(),
       related_products: idsFrom(product.related_products).join(", "),
     });
@@ -290,6 +308,25 @@ export default function ProductManager({ filters }: ProductManagerProps) {
 </div>
 
 
+{isAdminMode && (
+  <div>
+    <Label htmlFor="vendor">Vendor</Label>
+    <Select
+      inputId="vendor"
+      options={vendorOptions}
+      value={vendorOptions.find(option => option.value === formData.vendor) || vendorOptions[0]}
+      onChange={(selected) =>
+        setFormData(prev => ({ ...prev, vendor: selected?.value || "" }))
+      }
+    />
+    {vendorsError && (
+      <p className="mt-1 text-[13px] text-destructive">
+        {apiErrorMessage(vendorsError, "Couldn't load vendors.")}
+      </p>
+    )}
+  </div>
+)}
+
 <div>
   <Label htmlFor="status">Status</Label>
   <Select
@@ -348,16 +385,18 @@ export default function ProductManager({ filters }: ProductManagerProps) {
                     <Label htmlFor="is_available">Available</Label>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="is_featured"
-                      checked={formData.is_featured}
-                      onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
-                      className="rounded"
-                    />
-                    <Label htmlFor="is_featured">Featured</Label>
-                  </div>
+                  {isAdminMode && (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="is_featured"
+                        checked={formData.is_featured}
+                        onChange={(e) => setFormData(prev => ({ ...prev, is_featured: e.target.checked }))}
+                        className="rounded"
+                      />
+                      <Label htmlFor="is_featured">Featured</Label>
+                    </div>
+                  )}
 
                   <div className="flex gap-2">
                     <Button type="submit" className="flex-1" disabled={saving}>

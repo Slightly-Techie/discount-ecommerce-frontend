@@ -51,6 +51,8 @@ export interface CreateProductData {
   discount_end?: string;
   image_url: string;
   category: string;
+  /** Honoured for platform staff only; null means GrottoMore (no vendor). */
+  vendor?: string | null;
   tags: string[];
   status: ProductStatus;
   is_available: boolean;
@@ -165,6 +167,50 @@ export interface AdminVendor extends Vendor {
   owners: VendorOwner[];
 }
 
+export interface CreateVendorPayload {
+  name: string;
+  business_email?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  about?: string;
+  logo?: File | null;
+  owner_email: string;
+  owner_first_name?: string;
+  owner_last_name?: string;
+  owner_phonenumber: string;
+  /** The vendor request this vendor is created from. */
+  request?: string;
+}
+
+export interface CreateVendorResponse extends AdminVendor {
+  invite_sent: boolean;
+}
+
+export type VendorRequestStatus = 'new' | 'converted' | 'dismissed';
+
+export interface VendorRequestPayload {
+  business_name: string;
+  contact_name: string;
+  email: string;
+  phone: string;
+  sells: string;
+  message?: string;
+}
+
+export interface VendorRequest {
+  id: string;
+  business_name: string;
+  contact_name: string;
+  email: string;
+  phone: string;
+  sells: string;
+  message: string;
+  status: VendorRequestStatus;
+  vendor: string | null;
+  created_at: string;
+}
+
 export interface VendorUpdatePayload {
   name?: string;
   business_email?: string;
@@ -251,7 +297,8 @@ export type NotificationType =
   | 'vendor_signup'
   | 'vendor_approved'
   | 'vendor_rejected'
-  | 'vendor_suspended';
+  | 'vendor_suspended'
+  | 'vendor_request';
 
 export interface AppNotification {
   id: string;
