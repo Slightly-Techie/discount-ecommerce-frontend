@@ -15,6 +15,16 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVendorMe } from "@/hooks/useVendors";
 import { canAccessAdminPortal } from "@/lib/roles";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { apiErrorMessage } from "@/lib/apiErrors";
+
+// Backend User.Gender choices; the field is optional (blank allowed).
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+];
+const GENDER_UNSET = "unspecified";
 
 interface ProfileForm {
   email: string;
@@ -98,7 +108,7 @@ export default function Profile() {
         first_name: user.first_name || "",
         last_name: user.last_name || "",
         date_of_birth: (user as any)?.date_of_birth || "",
-        gender: (user as any)?.gender || "",
+        gender: String((user as any)?.gender || "").toLowerCase(),
         bio: (user as any)?.profile?.bio || "",
         website: (user as any)?.profile?.website || "",
         profile_image: (user as any)?.profile?.profile_image || "",
@@ -168,7 +178,7 @@ export default function Profile() {
 
       toast({ title: "Profile updated", description: "Your profile has been updated successfully." });
     } catch (err: any) {
-      const msg = err?.response?.data ? JSON.stringify(err.response.data) : (err?.message || 'Could not update profile.');
+      const msg = apiErrorMessage(err, 'Could not update profile.');
       toast({ title: "Update failed", description: msg, variant: "destructive" });
     } finally {
       setUploading(false);
@@ -185,7 +195,7 @@ export default function Profile() {
       resetAddressForm();
       toast({ title: 'Address added' });
     } catch (err: any) {
-      const msg = err?.response?.data ? JSON.stringify(err.response.data) : (err?.message || 'Could not add address.');
+      const msg = apiErrorMessage(err, 'Could not add address.');
       toast({ title: 'Error', description: msg, variant: 'destructive' });
     }
   };
@@ -196,7 +206,7 @@ export default function Profile() {
       await queryClient.invalidateQueries({ queryKey: authKeys.user });
       toast({ title: 'Default address set' });
     } catch (err: any) {
-      const msg = err?.response?.data ? JSON.stringify(err.response.data) : (err?.message || 'Could not update address.');
+      const msg = apiErrorMessage(err, 'Could not update address.');
       toast({ title: 'Error', description: msg, variant: 'destructive' });
     }
   };
@@ -207,7 +217,7 @@ export default function Profile() {
       await queryClient.invalidateQueries({ queryKey: authKeys.user });
       toast({ title: 'Address deleted' });
     } catch (err: any) {
-      const msg = err?.response?.data ? JSON.stringify(err.response.data) : (err?.message || 'Could not delete address.');
+      const msg = apiErrorMessage(err, 'Could not delete address.');
       toast({ title: 'Error', description: msg, variant: 'destructive' });
     }
   };
@@ -293,7 +303,6 @@ export default function Profile() {
                 { id: "email", label: "Email", type: "email", autoComplete: "email" },
                 { id: "phonenumber", label: "Phone number", type: "tel", autoComplete: "tel" },
                 { id: "date_of_birth", label: "Date of birth", type: "date", autoComplete: "bday" },
-                { id: "gender", label: "Gender", placeholder: "male, female or other" },
               ].map((f) => (
                 <div key={f.id} className="flex flex-col gap-1.5">
                   <Label htmlFor={f.id} className="text-sm font-semibold">
@@ -304,13 +313,31 @@ export default function Profile() {
                     name={f.id}
                     type={f.type || "text"}
                     autoComplete={f.autoComplete}
-                    placeholder={f.placeholder}
                     value={String((form as unknown as Record<string, unknown>)[f.id] ?? "")}
                     onChange={handleChange}
                     required
                   />
                 </div>
               ))}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="gender" className="text-sm font-semibold">Gender (optional)</Label>
+                <Select
+                  value={form.gender || GENDER_UNSET}
+                  onValueChange={(v) => setForm((f) => ({ ...f, gender: v === GENDER_UNSET ? "" : v }))}
+                >
+                  <SelectTrigger id="gender" className="h-12 text-base">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={GENDER_UNSET}>Prefer not to say</SelectItem>
+                    {GENDER_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex flex-col gap-1.5 md:col-span-2">
                 <Label htmlFor="bio" className="text-sm font-semibold">Bio (optional)</Label>
                 <Input id="bio" name="bio" value={form.bio} onChange={handleChange} />
