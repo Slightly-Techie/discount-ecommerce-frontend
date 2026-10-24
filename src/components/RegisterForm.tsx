@@ -4,8 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRegister } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { apiFormErrors, formFieldErrors } from "@/lib/apiErrors";
+import { normalizePhone, passwordError, phoneError } from "@/lib/registration";
 import { Link } from "react-router-dom";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
@@ -13,6 +14,18 @@ interface RegisterFormProps {
   /** When true, render only the form (no card wrapper) for embedding in custom layouts */
   embedded?: boolean;
 }
+
+// API field name → this form's state key.
+const API_TO_FORM_FIELD: Record<string, string> = {
+  first_name: "firstname",
+  last_name: "lastname",
+  username: "username",
+  email: "email",
+  password: "password",
+  phonenumber: "phonenumber",
+  date_of_birth: "date_of_birth",
+  gender: "gender",
+};
 
 export function RegisterForm({ embedded }: RegisterFormProps) {
   const [formData, setFormData] = useState({
@@ -29,9 +42,9 @@ export function RegisterForm({ embedded }: RegisterFormProps) {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   const registerMutation = useRegister();
-  const { toast } = useToast();
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -48,8 +61,9 @@ export function RegisterForm({ embedded }: RegisterFormProps) {
       newErrors.username = "Username is required";
     }
 
-    if (!formData.phonenumber.trim()) {
-      newErrors.phonenumber = "Phone number is required";
+    const phoneProblem = phoneError(formData.phonenumber);
+    if (phoneProblem) {
+      newErrors.phonenumber = phoneProblem;
     }
 
     if (!formData.email.trim()) {
@@ -58,10 +72,9 @@ export function RegisterForm({ embedded }: RegisterFormProps) {
       newErrors.email = "Please enter a valid email";
     }
 
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    const passwordProblem = passwordError(formData.password);
+    if (passwordProblem) {
+      newErrors.password = passwordProblem;
     }
 
     if (!formData.date_of_birth.trim()) {
@@ -77,7 +90,8 @@ export function RegisterForm({ embedded }: RegisterFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setFormError(null);
+
     if (!validateForm()) {
       return;
     }
@@ -87,16 +101,20 @@ export function RegisterForm({ embedded }: RegisterFormProps) {
         first_name: formData.firstname,
         last_name: formData.lastname,
         username: formData.username,
-        phonenumber: formData.phonenumber,
-        email: formData.email,
+        phonenumber: normalizePhone(formData.phonenumber),
+        email: formData.email.trim(),
         password: formData.password,
         date_of_birth: formData.date_of_birth,
         gender: formData.gender,
         role: formData.role,
         metadata: formData.metadata,
       });
-    } catch (error: any) {
-      // Error is handled by the mutation's onError callback
+    } catch (error) {
+      // The mutation's onError shows a toast; here we put each API message
+      // under the field it belongs to, so people know exactly what to fix.
+      const { fields, general } = formFieldErrors(apiFormErrors(error), API_TO_FORM_FIELD);
+      setErrors(fields);
+      setFormError(general);
     }
   };
 
@@ -155,6 +173,7 @@ export function RegisterForm({ embedded }: RegisterFormProps) {
               value={formData.email}
               onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               placeholder="Enter your email"
+              autoComplete="email"
               className={errors.email ? "border-red-500" : ""}
             />
             {errors.email && (
@@ -169,7 +188,8 @@ export function RegisterForm({ embedded }: RegisterFormProps) {
               type="password"
               value={formData.password}
               onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              placeholder="Enter your password"
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
               className={errors.password ? "border-red-500" : ""}
             />
             {errors.password && (
@@ -181,10 +201,12 @@ export function RegisterForm({ embedded }: RegisterFormProps) {
             <Label htmlFor="phonenumber">Phone Number</Label>
             <Input
               id="phonenumber"
-              type="text"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={formData.phonenumber}
               onChange={(e) => setFormData(prev => ({ ...prev, phonenumber: e.target.value }))}
-              placeholder="Enter your phone number"
+              placeholder="e.g. 0241234567"
               className={errors.phonenumber ? "border-red-500" : ""}
             />
               {errors.phonenumber && (
@@ -227,6 +249,12 @@ export function RegisterForm({ embedded }: RegisterFormProps) {
               <p className="text-sm text-red-500 mt-1">{errors.gender}</p>
             )}
           </div>
+          {formError && (
+            <div role="alert" className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{formError}</span>
+            </div>
+          )}
             <Button 
             type="submit" 
             className="w-full" 
