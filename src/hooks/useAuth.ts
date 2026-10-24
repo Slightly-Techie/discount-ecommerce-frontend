@@ -5,6 +5,7 @@ import { useToast } from './use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useCartStore } from '@/store/cartStore';
 import { useOrdersStore } from '@/store/ordersStore';
+import { apiErrorMessage } from '@/lib/apiErrors';
 
 // Query keys
 export const authKeys = {
@@ -144,10 +145,10 @@ export const useRegister = () => {
         navigate('/');
       }
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
-        title: "Registration failed",
-        description: error.response?.data?.message || error.response?.data?.detail || error.message || "Failed to create account",
+        title: "We couldn’t create your account",
+        description: apiErrorMessage(error, "Something went wrong. Try again."),
         variant: "destructive",
       });
     },
