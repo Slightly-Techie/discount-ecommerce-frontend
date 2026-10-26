@@ -23,7 +23,7 @@ export function VendorProductsPanel({ filters }: VendorProductsPanelProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="p-3 pt-4 sm:p-6 sm:pt-4">
         <ProductManager filters={filters} mode="vendor" />
       </CardContent>
     </Card>

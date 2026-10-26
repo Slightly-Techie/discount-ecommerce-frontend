@@ -112,6 +112,17 @@ export const productApi = {
     return response.data;
   },
 
+  // Attach an uploaded photo; the API stores it in S3 and returns the product.
+  uploadProductImage: async (id: string, file: File): Promise<Product> => {
+    const form = new FormData();
+    form.append('image', file);
+    const response = await api.patch(`/products/${id}/`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 60000,
+    });
+    return response.data;
+  },
+
   // Delete product (Admin only)
   deleteProduct: async (id: string): Promise<void> => {
     await api.delete(`/products/${id}`);

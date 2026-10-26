@@ -103,6 +103,19 @@ export const useUpdateProduct = () => {
   });
 };
 
+// Upload a product photo; errors are left to the caller, which knows whether the product itself saved.
+export const useUploadProductImage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => productApi.uploadProductImage(id, file),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+    },
+  });
+};
+
 // Delete product mutation
 export const useDeleteProduct = () => {
   const queryClient = useQueryClient();

@@ -4,6 +4,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Heart, ShoppingCart, Star } from "lucide-react";
 import { Product } from "@/types/product";
 import { useCartStore } from "@/store/cartStore";
+import { productImage } from "@/lib/deal";
 
 interface ProductCardProps {
   product: Product;
@@ -33,7 +34,7 @@ export function ProductCard({
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] animate-fade-in">
       <div className="relative overflow-hidden">
         <img
-          src={product?.image_url}
+          src={productImage(product) ?? undefined}
           alt={product.name}
           className="h-48 w-full object-cover transition-transform duration-300 group-hover:scale-110"
         />
