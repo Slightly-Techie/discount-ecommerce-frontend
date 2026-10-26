@@ -23,7 +23,7 @@ import { adminApi, vendorsApi } from "@/lib/api";
 import { apiErrorMessage, slugify } from "@/lib/apiErrors";
 import { formatGHS } from "@/lib/price";
 import { productImage } from "@/lib/deal";
-import { productImageError } from "@/lib/upload";
+import { productImageError, shrinkPhoto } from "@/lib/upload";
 
 /** Map typed tag names to tag IDs, creating tags that don't exist yet. */
 async function resolveTagIds(input: string): Promise<string[]> {
@@ -91,6 +91,7 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [preparingImage, setPreparingImage] = useState(false);
 
   useEffect(() => {
     if (!imageFile) {
@@ -102,12 +103,26 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] ?? null;
-    const error = file ? productImageError(file) : null;
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const picked = input.files?.[0] ?? null;
+    if (!picked) {
+      setImageError(null);
+      setImageFile(null);
+      return;
+    }
+    // Check the type first; size is checked after shrinking, since phone photos are often over the limit.
+    let error = productImageError({ type: picked.type, size: 0 });
+    let file: File | null = null;
+    if (!error) {
+      setPreparingImage(true);
+      file = await shrinkPhoto(picked);
+      setPreparingImage(false);
+      error = productImageError(file);
+    }
     setImageError(error);
     setImageFile(error ? null : file);
-    if (error) e.target.value = "";
+    if (error) input.value = "";
   };
 
   const resetForm = () => {
@@ -331,7 +346,7 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
                       />
                     </div>
                     <p className={`mt-1 text-[13px] ${imageError ? "text-destructive" : "text-muted-foreground"}`}>
-                      {imageError ?? "JPEG, PNG or WebP, up to 5 MB."}
+                      {imageError ?? (preparingImage ? "Preparing photo…" : "JPEG, PNG or WebP. Large photos are resized automatically.")}
                     </p>
                   </div>
 
@@ -468,7 +483,7 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
                   )}
 
                   <div className="flex gap-2">
-                    <Button type="submit" className="flex-1" disabled={saving}>
+                    <Button type="submit" className="flex-1" disabled={saving || preparingImage}>
                       <Save className="h-4 w-4 mr-2" />
                       {saving ? "Saving…" : `${editingProduct ? "Update" : "Add"} Product`}
                     </Button>
