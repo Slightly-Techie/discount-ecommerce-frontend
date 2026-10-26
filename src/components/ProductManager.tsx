@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Save, Edit, Trash2, Package } from "lucide-react";
+import { Plus, Save, Edit, Trash2, Package, ImageOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
   useCreateProduct,
   useUpdateProduct,
   useDeleteProduct,
+  useUploadProductImage,
 } from "@/hooks/useProducts";
 import { useCategories } from "@/hooks/useCategories";
 import { Product, ProductFilters } from "@/types";
@@ -21,6 +22,8 @@ import type { ProductStatus } from "@/types/product";
 import { adminApi, vendorsApi } from "@/lib/api";
 import { apiErrorMessage, slugify } from "@/lib/apiErrors";
 import { formatGHS } from "@/lib/price";
+import { productImage } from "@/lib/deal";
+import { productImageError } from "@/lib/upload";
 
 /** Map typed tag names to tag IDs, creating tags that don't exist yet. */
 async function resolveTagIds(input: string): Promise<string[]> {
@@ -52,6 +55,7 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
+  const uploadImageMutation = useUploadProductImage();
   const { data: categoryMutation } = useCategories();
   const isAdminMode = mode === "admin";
   const { data: vendorsResponse, error: vendorsError } = useQuery({
@@ -84,6 +88,27 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
     related_products: "",
   });
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    const error = file ? productImageError(file) : null;
+    setImageError(error);
+    setImageFile(error ? null : file);
+    if (error) e.target.value = "";
+  };
 
   const resetForm = () => {
     setFormData({
@@ -105,6 +130,8 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
     });
     setIsAddingProduct(false);
     setEditingProduct(null);
+    setImageFile(null);
+    setImageError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -139,10 +166,23 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
           .filter(Boolean),
       };
 
-      if (editingProduct) {
-        await updateProductMutation.mutateAsync({ id: editingProduct.id, product: productData as never });
-      } else {
-        await createProductMutation.mutateAsync(productData as never);
+      const saved = editingProduct
+        ? await updateProductMutation.mutateAsync({ id: editingProduct.id, product: productData as never })
+        : await createProductMutation.mutateAsync(productData as never);
+
+      if (imageFile) {
+        try {
+          await uploadImageMutation.mutateAsync({ id: saved.id, file: imageFile });
+        } catch (error) {
+          // The product is saved; keep it open in edit mode so the photo can be retried.
+          toast({
+            title: "Product saved, but the photo didn't upload",
+            description: apiErrorMessage(error, "Try choosing the photo again."),
+            variant: "destructive",
+          });
+          setEditingProduct({ ...(editingProduct ?? {}), ...saved } as Product);
+          return;
+        }
       }
       // Only clear the form once the save succeeded; on failure the input is kept.
       resetForm();
@@ -155,6 +195,8 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
+    setImageFile(null);
+    setImageError(null);
     setFormData({
       name: product.name,
       description: product.description,
@@ -200,7 +242,7 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
               {editingProduct ? "Edit Product" : "Add New Product"}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <Label htmlFor="name">Product Name *</Label>
@@ -245,7 +287,7 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <Label htmlFor="discount_start">Discount Start Date</Label>
                       <Input
@@ -267,7 +309,34 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
                   </div>
 
                   <div>
-                    <Label htmlFor="image_url">Image URL</Label>
+                    <Label htmlFor="image">Photo</Label>
+                    <div className="mt-1 flex items-center gap-3">
+                      {previewUrl || (editingProduct && productImage(editingProduct)) ? (
+                        <img
+                          src={previewUrl || productImage(editingProduct!) || undefined}
+                          alt=""
+                          className="h-16 w-16 shrink-0 rounded-md border object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-md border bg-gray-50 text-muted-foreground">
+                          <ImageOff className="h-5 w-5" />
+                        </div>
+                      )}
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleImageChange}
+                        className="min-w-0"
+                      />
+                    </div>
+                    <p className={`mt-1 text-[13px] ${imageError ? "text-destructive" : "text-muted-foreground"}`}>
+                      {imageError ?? "JPEG, PNG or WebP, up to 5 MB."}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="image_url">Or image URL</Label>
                     <Input
                       id="image_url"
                       value={formData.image_url}
@@ -423,24 +492,30 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
               Products ({products.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="space-y-4">
               {products.map((product) => (
                 <div
                   key={product.id}
-                  className="flex items-center gap-4 p-4 border rounded-lg bg-white hover:shadow-md transition"
+                  className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg bg-white hover:shadow-md transition"
                 >
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-16 h-16 object-cover rounded-md"
-                  />
+                  {productImage(product) ? (
+                    <img
+                      src={productImage(product)!}
+                      alt={product.name}
+                      className="w-16 h-16 shrink-0 object-cover rounded-md"
+                    />
+                  ) : (
+                    <div className="flex w-16 h-16 shrink-0 items-center justify-center rounded-md bg-gray-50 text-muted-foreground">
+                      <ImageOff className="h-5 w-5" />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold truncate">{product.name}</h3>
                     <p className="text-sm text-muted-foreground truncate">
                       {product.description}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
                       <Badge variant="outline">{product.status}</Badge>
                       <Badge variant="secondary">{product.category?.name}</Badge>
                       <span className="text-sm font-medium">
@@ -453,10 +528,11 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 ml-auto">
                     <Button
                       variant="outline"
                       size="sm"
+                      aria-label={`Edit ${product.name}`}
                       onClick={() => handleEdit(product)}
                     >
                       <Edit className="h-4 w-4" />
@@ -464,6 +540,7 @@ export default function ProductManager({ filters, mode = "admin" }: ProductManag
                     <Button
                       variant="outline"
                       size="sm"
+                      aria-label={`Delete ${product.name}`}
                       onClick={() => handleDelete(product.id)}
                     >
                       <Trash2 className="h-4 w-4" />
