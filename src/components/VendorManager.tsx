@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import {
+  useChangeOwnerEmail,
   useCreateVendor,
   useDismissVendorRequest,
   useResendInvite,
@@ -77,6 +78,9 @@ export function VendorManager({ focusVendorId, onFocusHandled }: VendorManagerPr
   const reject = useVendorAction("reject");
   const suspend = useVendorAction("suspend");
   const resendInvite = useResendInvite();
+  const changeOwnerEmail = useChangeOwnerEmail();
+  const [changingEmail, setChangingEmail] = useState<AdminVendor | null>(null);
+  const [ownerEmail, setOwnerEmail] = useState("");
   const dismissRequest = useDismissVendorRequest();
   const [searchParams] = useSearchParams();
   const [view, setView] = useState<"vendors" | "requests">(
@@ -114,6 +118,19 @@ export function VendorManager({ focusVendorId, onFocusHandled }: VendorManagerPr
         >
           <Mail className="h-4 w-4 mr-1" />
           Resend invite
+        </Button>
+      )}
+      {v.owners?.length > 0 && (
+        <Button
+          size={size}
+          variant="outline"
+          onClick={() => {
+            setOwnerEmail(v.owners[0].email);
+            setChangingEmail(v);
+          }}
+        >
+          <Pencil className="h-4 w-4 mr-1" />
+          Login email
         </Button>
       )}
       {v.status === "pending" && (
@@ -441,6 +458,57 @@ export function VendorManager({ focusVendorId, onFocusHandled }: VendorManagerPr
               Reject vendor
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change the owner's login email */}
+      <Dialog open={!!changingEmail} onOpenChange={(open) => !open && setChangingEmail(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change login email for {changingEmail?.name}</DialogTitle>
+            <DialogDescription>
+              The owner signs in with this email. If they haven’t set a password yet, a new invite is sent
+              here and the old link stops working.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!changingEmail) return;
+              changeOwnerEmail.mutate(
+                { id: changingEmail.id, email: ownerEmail.trim() },
+                { onSuccess: () => setChangingEmail(null) }
+              );
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="owner-email">Login email</Label>
+              <Input
+                id="owner-email"
+                type="email"
+                required
+                value={ownerEmail}
+                onChange={(e) => setOwnerEmail(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setChangingEmail(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  changeOwnerEmail.isPending ||
+                  !ownerEmail.trim() ||
+                  ownerEmail.trim() === changingEmail?.owners[0]?.email
+                }
+              >
+                {changeOwnerEmail.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                Save email
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

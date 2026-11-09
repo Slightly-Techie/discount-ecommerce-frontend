@@ -288,6 +288,11 @@ export const vendorsApi = {
     const response = await api.post(`/vendors/${id}/resend-invite/`);
     return response.data;
   },
+  // invite_sent is null when the owner already has a password, so no invite was needed.
+  changeOwnerEmail: async (id: string, email: string): Promise<{ email: string; invite_sent: boolean | null }> => {
+    const response = await api.patch(`/vendors/${id}/owner-email/`, { email });
+    return response.data;
+  },
   submitRequest: async (data: VendorRequestPayload): Promise<{ detail: string }> => {
     const response = await api.post('/vendors/requests/', data);
     return response.data;
