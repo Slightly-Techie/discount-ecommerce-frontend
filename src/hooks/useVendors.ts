@@ -172,7 +172,41 @@ export const useResendInvite = () => {
   });
 };
 
-export const useVendorRequests = (params: { status?: VendorRequestStatus; page?: number } = {}) =>
+// Admin: fix a vendor owner's login email. Owners without a password get a fresh invite there.
+export const useChangeOwnerEmail = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: ({ id, email }: { id: string; email: string }) => vendorsApi.changeOwnerEmail(id, email),
+    onSuccess: ({ email, invite_sent }) => {
+      queryClient.invalidateQueries({ queryKey: vendorKeys.all });
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
+      if (invite_sent === false) {
+        toast({
+          title: 'Login email changed',
+          description: `The invite to ${email} could not be sent. Use Resend invite.`,
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Login email changed',
+          description: invite_sent
+            ? `A new invite was sent to ${email}. The old link no longer works.`
+            : `The owner now signs in with ${email}.`,
+        });
+      }
+    },
+    onError: (error) =>
+      toast({
+        title: 'Could not change login email',
+        description: apiErrorMessage(error),
+        variant: 'destructive',
+      }),
+  });
+};
+
+export const useVendorRequests =(params: { status?: VendorRequestStatus; page?: number } = {}) =>
   useQuery({
     queryKey: [...vendorKeys.requests(), params],
     queryFn: () => vendorsApi.listRequests({ ...params, page_size: ADMIN_PAGE_SIZE }),
